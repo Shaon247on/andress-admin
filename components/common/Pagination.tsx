@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export default function Pagination({
   total = 0,
-  pageSize = 10,
+  pageSize = 20,
 }: {
   total?: number;
   pageSize?: number;
@@ -16,7 +16,7 @@ export default function Pagination({
   const router = useRouter();
   const params = useSearchParams();
   const current = parseInt(params.get("page") || "1", 10) || 1;
-  const pages = Math.max(1, Math.ceil((total || 0) / pageSize));
+  const pages = Math.max(1, Math.ceil((total || 0) / 20));
 
   const goto = (p: number) => {
     const q = new URLSearchParams(Array.from(params.entries()));
@@ -86,12 +86,12 @@ export default function Pagination({
                   "flex h-9 w-9 items-center justify-center rounded-md text-sm font-medium transition-colors",
                   page === current
                     ? "bg-primary text-primary-foreground shadow-sm pointer-events-none"
-                    : "border border-border bg-background text-foreground hover:bg-muted"
+                    : "border border-border bg-background text-foreground hover:bg-muted",
                 )}
               >
                 {page}
               </button>
-            )
+            ),
           )}
         </div>
 

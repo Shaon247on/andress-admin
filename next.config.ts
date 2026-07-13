@@ -1,33 +1,44 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
   eslint: {
     ignoreDuringBuilds: true,
   },
+
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Allow access to remote image placeholder.
+
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**', // This allows any path under the hostname
+        protocol: "https",
+        hostname: "picsum.photos",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.athlongoapp.com",
+        pathname: "/**",
       },
     ],
   },
-  output: 'standalone',
-  transpilePackages: ['motion'],
-  webpack: (config, {dev}) => {
-    // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-    if (dev && process.env.DISABLE_HMR === 'true') {
+
+  output: "standalone",
+
+  transpilePackages: ["motion"],
+
+  webpack: (config, { dev }) => {
+    if (dev) {
       config.watchOptions = {
-        ignored: /.*/,
+        poll: 1000,
+        aggregateTimeout: 300,
+        ignored: /node_modules/,
       };
     }
+
     return config;
   },
 };

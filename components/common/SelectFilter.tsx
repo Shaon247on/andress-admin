@@ -1,8 +1,16 @@
+// components/common/SelectFilter.tsx
+
 "use client";
 
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface SelectOption {
   label: string;
@@ -13,40 +21,50 @@ export default function SelectFilter({
   name = "filter",
   placeholder = "All",
   options = [],
+  className
 }: {
   name?: string;
   placeholder?: string;
+  className?: string;
   options?: SelectOption[];
 }) {
   const router = useRouter();
-  const params = useSearchParams();
-  const current = params.get(name) ?? "";
+  const searchParams = useSearchParams();
+  const current = searchParams.get(name) ?? "all";
 
-  const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    const q = new URLSearchParams(Array.from(params.entries()));
-    if (val) q.set(name, val);
-    else q.delete(name);
+  const onChange = (value: string) => {
+    const q = new URLSearchParams(Array.from(searchParams.entries()));
+    if (value && value !== "all") {
+      q.set(name, value);
+    } else {
+      q.delete(name);
+    }
     q.delete("page");
     router.push(`${window.location.pathname}?${q.toString()}`);
   };
 
+  // Filter out any options with empty string values
+  const validOptions = options.filter(opt => opt.value !== "");
+  
+  // Add "All" option at the beginning
+  const allOptions = [{ label: placeholder, value: "all" }, ...validOptions];
+
   return (
-    <div className="relative inline-flex items-center">
-      <select
-        value={current}
-        onChange={onChange}
-        aria-label={placeholder}
-        className="h-10 w-full min-w-[140px] appearance-none rounded-lg border border-border bg-background pl-3 pr-9 text-sm text-foreground shadow-sm outline-none transition focus:ring-2 focus:ring-primary/30 focus:border-primary cursor-pointer"
-      >
-        <option value="">{placeholder}</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+    <Select value={current} onValueChange={onChange}>
+      <SelectTrigger className={`h-10 w-full min-w-[140px] rounded-lg border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary ${className}`}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent className="bg-surface border-border rounded-xl shadow-lg">
+        {allOptions.map((opt) => (
+          <SelectItem 
+            key={opt.value} 
+            value={opt.value}
+            className="cursor-pointer hover:bg-background transition-colors"
+          >
             {opt.label}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 h-4 w-4 text-muted-foreground" />
-    </div>
+      </SelectContent>
+    </Select>
   );
 }

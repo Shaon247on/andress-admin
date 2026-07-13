@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <div className="w-full">
+    <div className="">
       <div className="flex items-center space-x-3">
         <div className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center shrink-0">
           <Image

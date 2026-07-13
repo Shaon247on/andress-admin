@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Loader2 } from "lucide-react";
 import { createAdminUserAction, editAdminUserAction } from "@/actions/admin-user.action";
-import type { AdminUserResult, AdminUserRole, Permissions } from "@/types/AdminUser.type";
+import type { AdminUserResult, AdminUserRole, AdminUserStatus, Permissions } from "@/types/AdminUser.type";
 
 const ROLES: { value: AdminUserRole; label: string }[] = [
   { value: "super_admin", label: "Super Admin" },
@@ -20,31 +20,35 @@ const ROLES: { value: AdminUserRole; label: string }[] = [
   { value: "support", label: "Support" },
 ];
 
-const STATUSES = [
+const STATUSES: { value: AdminUserStatus; label: string }[] = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
-] as const;
+];
 
 type PermissionKey = keyof Permissions;
 
 const PERMISSION_FIELDS: { key: PermissionKey; label: string }[] = [
-  { key: "can_users", label: "Users" },
-  { key: "can_courts", label: "Courts" },
-  { key: "can_bookings", label: "Bookings" },
-  { key: "can_payments", label: "Payments" },
-  { key: "can_settings", label: "Settings" },
-  { key: "can_support", label: "Support" },
-  { key: "can_reports", label: "Reports" },
+  { key: "dashboard", label: "Dashboard" },
+  { key: "requests", label: "Requests" },
+  { key: "athlongo_users", label: "AthlonGo Users" },
+  { key: "admin_users", label: "Admin Users" },
+  { key: "court_manager", label: "Court Manager" },
+  { key: "all_courts", label: "All Courts" },
+  { key: "bookings", label: "Bookings" },
+  { key: "support", label: "Support" },
+  { key: "payments", label: "Payments" },
 ];
 
 const DEFAULT_PERMISSIONS: Permissions = {
-  can_users: false,
-  can_courts: false,
-  can_bookings: false,
-  can_payments: false,
-  can_settings: false,
-  can_support: false,
-  can_reports: false,
+  dashboard: false,
+  requests: false,
+  athlongo_users: false,
+  admin_users: false,
+  court_manager: false,
+  all_courts: false,
+  bookings: false,
+  support: false,
+  payments: false,
 };
 
 interface AdminActionDialogProps {
@@ -66,6 +70,7 @@ export default function AdminActionDialog({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<AdminUserRole>("moderator");
+  const [status, setStatus] = useState<AdminUserStatus>("active");
   const [permissions, setPermissions] = useState<Permissions>(DEFAULT_PERMISSIONS);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -76,11 +81,13 @@ export default function AdminActionDialog({
       setFullName(editing.full_name ?? "");
       setEmail(editing.email ?? "");
       setRole((editing.role as AdminUserRole) ?? "moderator");
+      setStatus((editing.status as AdminUserStatus) ?? "active");
       setPermissions(editing.permissions ?? DEFAULT_PERMISSIONS);
     } else {
       setFullName("");
       setEmail("");
       setRole("moderator");
+      setStatus("active");
       setPermissions(DEFAULT_PERMISSIONS);
     }
     setError(null);
@@ -98,11 +105,22 @@ export default function AdminActionDialog({
 
     startTransition(async () => {
       if (isEdit && editing?.id) {
-        const res = await editAdminUserAction(editing.id, { full_name: fullName, role, permissions });
+        const res = await editAdminUserAction(editing.id, { 
+          full_name: fullName, 
+          role, 
+          status,
+          permissions 
+        });
         if (!res.success) { setError(res.message); return; }
         setSuccessMsg(res.message);
       } else {
-        const res = await createAdminUserAction({ full_name: fullName, email, role, permissions });
+        const res = await createAdminUserAction({ 
+          full_name: fullName, 
+          email, 
+          role, 
+          status,
+          permissions 
+        });
         if (!res.success) { setError(res.message); return; }
         setSuccessMsg(res.message);
       }
@@ -205,9 +223,10 @@ export default function AdminActionDialog({
                 <div className="relative">
                   <select
                     id="status"
-                    value={editing?.status ?? "active"}
-                    disabled
-                    className="w-full h-10 appearance-none rounded-xl border border-border bg-background px-3 pr-9 text-sm text-foreground outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as AdminUserStatus)}
+                    disabled={isPending}
+                    className="w-full h-10 appearance-none rounded-xl border border-border bg-background px-3 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition cursor-pointer disabled:opacity-60"
                   >
                     {STATUSES.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>

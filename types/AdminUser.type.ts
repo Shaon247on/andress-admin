@@ -1,11 +1,13 @@
 export interface Permissions {
-  can_users: boolean;
-  can_courts: boolean;
-  can_bookings: boolean;
-  can_payments: boolean;
-  can_settings: boolean;
-  can_support: boolean;
-  can_reports: boolean;
+  dashboard: boolean;
+  requests: boolean;
+  athlongo_users: boolean;
+  admin_users: boolean;
+  court_manager: boolean;
+  all_courts: boolean;
+  bookings: boolean;
+  support: boolean;
+  payments: boolean;
 }
 
 export interface AdminUserResult {
@@ -27,17 +29,20 @@ export interface AdminUsersListResponse {
 }
 
 export type AdminUserRole = "super_admin" | "moderator" | "support";
+export type AdminUserStatus = "active" | "inactive";
 
 export interface CreateAdminUserPayload {
   full_name: string;
   email: string;
   role: AdminUserRole;
+  status: AdminUserStatus;
   permissions: Permissions;
 }
 
 export interface EditAdminUserPayload {
   full_name: string;
   role: AdminUserRole;
+  status: AdminUserStatus;
   permissions: Permissions;
 }
 

@@ -20,13 +20,20 @@ export async function loginAction(values: unknown) {
     }
 
     const data = apiResult.data;
-    await setAuthCookies({ access_token: data.access_token, refresh_token: data.refresh_token, user: data.user });
+    // Store permissions along with the rest of the data
+    await setAuthCookies({ 
+      access_token: data.access_token, 
+      refresh_token: data.refresh_token, 
+      user: data.user,
+      permissions: data.user?.permissions || {}
+    });
     return { success: true, data: { user: data.user } };
   } catch (error) {
     const err = handleApiError(error);
     return { success: false, message: err.message };
   }
 }
+
 
 export async function forgotPasswordAction(values: unknown) {
   const parseResult = forgotPasswordSchema.safeParse(values);

@@ -1,11 +1,13 @@
+// components/layout/Header.tsx
+
 "use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Search, Menu, ChevronDown, Settings, LogOut } from "lucide-react";
-import { Input } from "@/components/elements/input";
+import { Menu, ChevronDown, Settings, LogOut } from "lucide-react";
+import { useUser } from "@/context/UserContext";
+import Image from "next/image";
 
 interface HeaderProps {
   onMobileMenuOpen: () => void;
@@ -13,6 +15,61 @@ interface HeaderProps {
 
 export default function Header({ onMobileMenuOpen }: HeaderProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { user, loading } = useUser();
+
+  const getRoleDisplay = (role?: string) => {
+    switch (role) {
+      case "owner":
+        return "Admin Portal";
+      case "super_admin":
+        return "Admin Portal";
+      case "moderator":
+        return "Moderator Portal";
+      case "support":
+        return "Support Portal";
+      default:
+        return "Portal";
+    }
+  };
+
+  const getInitials = () => {
+    if (user?.full_name) {
+      return user.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "A";
+  };
+
+  const getDisplayName = () => {
+    if (user?.full_name) {
+      return user.full_name;
+    }
+    if (user?.email) {
+      return user.email.split("@")[0];
+    }
+    return "Admin User";
+  };
+
+  const getRoleColor = (role?: string) => {
+    switch (role) {
+      case "owner":
+      case "super_admin":
+        return "text-green-600";
+      case "moderator":
+        return "text-blue-600";
+      case "support":
+        return "text-purple-600";
+      default:
+        return "text-green-600";
+    }
+  };
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-surface px-4 sm:px-6 lg:px-8">
@@ -23,13 +80,8 @@ export default function Header({ onMobileMenuOpen }: HeaderProps) {
         >
           <Menu className="h-6 w-6" />
         </button>
-        <div className="w-full max-w-lg relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
-          <Input
-            type="search"
-            placeholder="Search users, courts, bookings, matches..."
-            className="pl-10 w-full bg-background border-border h-10 rounded-lg shadow-sm"
-          />
+        <div className={`text-lg font-semibold ${getRoleColor(user?.role)} font-stretch-110%`}>
+          {loading ? "Loading..." : `${getRoleDisplay(user?.role)}`}
         </div>
       </div>
 
@@ -38,17 +90,31 @@ export default function Header({ onMobileMenuOpen }: HeaderProps) {
           className="flex items-center gap-3 cursor-pointer bg-background px-3 py-1.5 rounded-full border border-border transition-colors hover:bg-surface"
           onClick={() => setIsProfileOpen((prev) => !prev)}
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-            A
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold overflow-hidden">
+            {user?.avatar_url ? (
+              <Image
+                src={user.avatar_url}
+                alt={getDisplayName()}
+                width={32}
+                height={32}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              getInitials()
+            )}
           </div>
           <div className="hidden sm:block">
-            <p className="text-sm font-medium text-text leading-none">Admin User</p>
-            <p className="text-xs text-text-muted mt-1 leading-none">Admin Portal</p>
+            <p className="text-sm font-medium text-text leading-none">
+              {getDisplayName()}
+            </p>
+            <p className="text-xs text-text-muted mt-1 leading-none capitalize">
+              {user?.role?.replace("_", " ") || "User"}
+            </p>
           </div>
           <ChevronDown
             className={cn(
               "h-4 w-4 text-text-muted transition-transform duration-200",
-              isProfileOpen && "rotate-180"
+              isProfileOpen && "rotate-180",
             )}
           />
         </div>

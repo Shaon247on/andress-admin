@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/elements/logo';
 import { Card, CardContent } from '@/components/elements/card';
 import { Input } from '@/components/elements/input';
-import { Button } from '@/components/elements/button';
+import { Button } from '@/components/ui/button';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
