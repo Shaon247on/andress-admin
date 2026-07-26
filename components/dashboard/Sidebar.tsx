@@ -19,10 +19,11 @@ import {
   Settings,
   LogOut,
   Shield,
+  Euro,
 } from "lucide-react";
 import type { Permissions, SidebarItem } from "@/types/Permissions.type";
+import { useSupportBadge } from "@/context/SupportBadgeContext";
 
-// Define sidebar items with permission keys
 const sidebarItems: SidebarItem[] = [
   {
     name: "Dashboard",
@@ -71,12 +72,20 @@ const sidebarItems: SidebarItem[] = [
     href: "/dashboard/support",
     icon: MessageSquare,
     permissionKey: "support",
+    // Add badge configuration for support
+    showBadge: true,
   },
   {
     name: "Payments",
     href: "/dashboard/payments",
     icon: CreditCard,
     permissionKey: "payments",
+  },
+  {
+    name: "Revenue",
+    href: "/dashboard/revenue",
+    icon: Euro,
+    // permissionKey: "revenue",
   },
 ];
 
@@ -92,6 +101,7 @@ export default function Sidebar({
   permissions,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { totalUnread, isConnected } = useSupportBadge();
 
   // Filter sidebar items based on permissions
   const filteredItems = sidebarItems.filter((item) => {
@@ -132,6 +142,14 @@ export default function Sidebar({
       >
         <div className="flex h-16 shrink-0 items-center border-b border-border px-6">
           <Logo className="h-8 items-start !flex-row !pb-0 [&_span]:text-xl" />
+
+          {/* Socket connection status indicator (optional) */}
+          {isConnected && (
+            <div className="ml-auto flex items-center gap-1.5">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] text-text-muted">Live</span>
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
@@ -143,13 +161,17 @@ export default function Sidebar({
             filteredItems.map((item) => {
               const isActive = isRouteActive(item);
               const Icon = item.icon;
+
+              // Check if this item should show a badge
+              const showBadge = item.showBadge && totalUnread > 0;
+
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   onClick={onClose}
                   className={cn(
-                    "group flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition-colors",
+                    "group flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition-colors relative",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-text-muted hover:bg-background hover:text-text",
@@ -164,6 +186,20 @@ export default function Sidebar({
                     )}
                   />
                   {item.name}
+
+                  {/* Badge for Support */}
+                  {showBadge && (
+                    <span
+                      className={cn(
+                        "ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-medium",
+                        isActive
+                          ? "bg-primary-foreground/20 text-primary-foreground"
+                          : "bg-red-500 text-white",
+                      )}
+                    >
+                      {totalUnread > 99 ? "99+" : totalUnread}
+                    </span>
+                  )}
                 </Link>
               );
             })

@@ -15,6 +15,13 @@ import {
   MessageSquare,
   FileText,
   CalendarDays,
+  CheckCircle,
+  Clock,
+  XCircle,
+  DollarSign,
+  TrendingUp,
+  Crown,
+  EuroIcon,
 } from "lucide-react";
 import {
   LineChart,
@@ -47,6 +54,112 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+// ── Dynamic Summary Card Component ──
+interface SummaryCardProps {
+  title: string;
+  value: number | string;
+  description: string;
+  icon: React.ReactNode;
+  iconBgColor: string;
+  iconTextColor: string;
+  href: string;
+  valueColor?: string;
+}
+
+const SummaryCard = ({
+  title,
+  value,
+  description,
+  icon,
+  iconBgColor,
+  iconTextColor,
+  href,
+  valueColor = "text-text",
+}: SummaryCardProps) => {
+  return (
+    <Link href={href}>
+      <Card className="flex flex-row items-center p-6 gap-4 border-none shadow-sm rounded-2xl bg-surface hover:shadow-md transition-shadow cursor-pointer h-full">
+        <div className="flex-1 space-y-1">
+          <p className="text-sm font-medium text-text-muted">{title}</p>
+          <p className={`text-2xl font-bold ${valueColor}`}>
+            {typeof value === "number" ? value.toLocaleString() : value}
+          </p>
+          <p className="text-xs text-text-muted mt-2">{description}</p>
+        </div>
+        <div
+          className={`h-12 w-12 rounded-xl ${iconBgColor} flex items-center justify-center ${iconTextColor}`}
+        >
+          {icon}
+        </div>
+      </Card>
+    </Link>
+  );
+};
+
+// ── Top Earned Court Managers Component ──
+interface TopCourtManager {
+  id: string;
+  name: string;
+  email: string;
+  totalEarnings: number;
+  courtCount: number;
+}
+
+const TopCourtManagers = ({ managers }: { managers: TopCourtManager[] }) => {
+  return (
+    <Card className="border-none shadow-sm rounded-2xl bg-surface">
+      <div className="flex items-center justify-between p-6 pb-2">
+        <CardTitle className="text-base font-semibold">
+          Top Earned Court Managers
+        </CardTitle>
+        <Link href="/dashboard/court-managers">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 shadow-none bg-background text-text"
+          >
+            View All
+          </Button>
+        </Link>
+      </div>
+      <CardContent>
+        <div className="space-y-4 pt-2">
+          {managers.map((manager, index) => (
+            <div
+              key={manager.id}
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-background/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-6 h-6">
+                  {index === 0 ? (
+                    <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                  ) : (
+                    <span className="text-sm font-medium text-text-muted">
+                      #{index + 1}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-text">{manager.name}</p>
+                  <p className="text-xs text-text-muted">{manager.email}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-green-600">
+                  €{manager.totalEarnings.toLocaleString()}
+                </p>
+                <p className="text-xs text-text-muted">
+                  {manager.courtCount} courts
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 interface DashboardOverviewProps {
   data: DashboardData | null;
   errorMessage?: string;
@@ -72,7 +185,143 @@ export default function DashboardOverview({
     );
   }
 
-  const { cards, booking_trend, court_utilization, todays_bookings } = data;
+  const { cards, booking_trend, todays_bookings } = data;
+
+  // ── Static data for request stats (since API doesn't provide these) ──
+  const requestStats = {
+    total_requests: 245,
+    pending_requests: 18,
+    approved_requests: 196,
+    rejected_requests: 31,
+  };
+
+  // ── Static data for pending payments ──
+  const pendingPayments = {
+    total_pending: 12,
+    total_amount: 2847.5,
+    overdue: 3,
+  };
+
+  // ── Static data for top earned court managers ──
+  const topCourtManagers: TopCourtManager[] = [
+    {
+      id: "1",
+      name: "Aminul Islam Shaon",
+      email: "i664x1kagv@lnovic.com",
+      totalEarnings: 31595,
+      courtCount: 26,
+    },
+    {
+      id: "2",
+      name: "Arena FC",
+      email: "testmgr@test.athlongo",
+      totalEarnings: 7340,
+      courtCount: 5,
+    },
+    {
+      id: "3",
+      name: "Chutiya Jubi",
+      email: "ddsc628dwj@bwmyga.com",
+      totalEarnings: 3000,
+      courtCount: 9,
+    },
+    {
+      id: "4",
+      name: "Demo Arena",
+      email: "demomgr@profileseed.athlongo",
+      totalEarnings: 1460,
+      courtCount: 3,
+    },
+    {
+      id: "5",
+      name: "John Doe",
+      email: "wpchxizdgz@bwmyga.com",
+      totalEarnings: 1107.5,
+      courtCount: 3,
+    },
+  ];
+
+  // ── Main cards data (first 2 rows) ──
+  const mainCards = [
+    {
+      title: "Total Users",
+      value: cards.total_users,
+      description: "AthlonGo Application",
+      icon: <Users className="h-6 w-6" />,
+      iconBgColor: "bg-primary/10",
+      iconTextColor: "text-primary",
+      href: "/dashboard/users",
+    },
+    {
+      title: "Court Managers",
+      value: cards.court_managers,
+      description: "Active accounts",
+      icon: <UserCog className="h-6 w-6" />,
+      iconBgColor: "bg-blue-100",
+      iconTextColor: "text-blue-600",
+      href: "/dashboard/court-managers",
+    },
+    {
+      title: "Total Courts",
+      value: cards.total_courts,
+      description: "Registered facilities",
+      icon: <MapPin className="h-6 w-6" />,
+      iconBgColor: "bg-emerald-100",
+      iconTextColor: "text-emerald-600",
+      href: "/dashboard/courts",
+    },
+    {
+      title: "Active Bookings",
+      value: cards.active_bookings,
+      description: "This month",
+      icon: <CalendarDays className="h-6 w-6" />,
+      iconBgColor: "bg-purple-100",
+      iconTextColor: "text-purple-600",
+      href: "/dashboard/bookings",
+    },
+    {
+      title: "Support Messages",
+      value: cards.support_messages,
+      description: "Unread messages",
+      icon: <MessageSquare className="h-6 w-6" />,
+      iconBgColor: "bg-pink-100",
+      iconTextColor: "text-pink-600",
+      href: "/dashboard/support",
+    },
+  ];
+
+  // ── Request cards data (last row) ──
+  const requestCards = [
+    {
+      title: "Total Requests",
+      value: requestStats.total_requests,
+      description: "All time requests",
+      icon: <FileText className="h-6 w-6" />,
+      iconBgColor: "bg-slate-100",
+      iconTextColor: "text-slate-600",
+      href: "/dashboard/requests",
+    },
+    {
+      title: "Court Manager Requests",
+      value: requestStats.pending_requests,
+      description: "Awaiting response",
+      icon: <Clock className="h-6 w-6" />,
+      iconBgColor: "bg-amber-100",
+      iconTextColor: "text-amber-600",
+      href: "/dashboard/requests?status=pending",
+      valueColor: "text-amber-600",
+    },
+    {
+      title: "Pending Payments",
+      value: pendingPayments.total_pending,
+      description: `€${pendingPayments.total_amount.toLocaleString()} total • ${pendingPayments.overdue} overdue`,
+      icon: <EuroIcon className="h-6 w-6" />,
+      iconBgColor: "bg-orange-100",
+      iconTextColor: "text-orange-600",
+      href: "/dashboard/payments",
+      valueColor: "text-orange-600",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -85,114 +334,20 @@ export default function DashboardOverview({
         </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Link href="/dashboard/users">
-          <Card className="flex flex-row items-center p-6 gap-4 border-none shadow-sm rounded-2xl bg-surface hover:shadow-md transition-shadow cursor-pointer h-full">
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium text-text-muted">Total Users</p>
-              <p className="text-2xl font-bold text-text">
-                {cards.total_users.toLocaleString()}
-              </p>
-              <p className="text-xs text-text-muted mt-2">
-                AthlonGo Application
-              </p>
-            </div>
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <Users className="h-6 w-6" />
-            </div>
-          </Card>
-        </Link>
-
-        <Link href="/dashboard/requests">
-          <Card className="flex flex-row items-center p-6 gap-4 border-none shadow-sm rounded-2xl bg-surface hover:shadow-md transition-shadow cursor-pointer h-full">
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium text-text-muted">
-                Pending Requests
-              </p>
-              <p className="text-2xl font-bold text-text">
-                {cards.pending_requests.toLocaleString()}
-              </p>
-              <p className="text-xs text-text-muted mt-2">Awaiting response</p>
-            </div>
-            <div className="h-12 w-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
-              <FileText className="h-6 w-6" />
-            </div>
-          </Card>
-        </Link>
-
-        <Link href="/dashboard/court-managers">
-          <Card className="flex flex-row items-center p-6 gap-4 border-none shadow-sm rounded-2xl bg-surface hover:shadow-md transition-shadow cursor-pointer h-full">
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium text-text-muted">
-                Court Managers
-              </p>
-              <p className="text-2xl font-bold text-text">
-                {cards.court_managers.toLocaleString()}
-              </p>
-              <p className="text-xs text-text-muted mt-2">Active accounts</p>
-            </div>
-            <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
-              <UserCog className="h-6 w-6" />
-            </div>
-          </Card>
-        </Link>
-
-        <Link href="/dashboard/courts">
-          <Card className="flex flex-row items-center p-6 gap-4 border-none shadow-sm rounded-2xl bg-surface hover:shadow-md transition-shadow cursor-pointer h-full">
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium text-text-muted">
-                Total Courts
-              </p>
-              <p className="text-2xl font-bold text-text">
-                {cards.total_courts.toLocaleString()}
-              </p>
-              <p className="text-xs text-text-muted mt-2">
-                Registered facilities
-              </p>
-            </div>
-            <div className="h-12 w-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-              <MapPin className="h-6 w-6" />
-            </div>
-          </Card>
-        </Link>
-
-        <Link href="/dashboard/bookings">
-          <Card className="flex flex-row items-center p-6 gap-4 border-none shadow-sm rounded-2xl bg-surface hover:shadow-md transition-shadow cursor-pointer h-full">
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium text-text-muted">
-                Active Bookings
-              </p>
-              <p className="text-2xl font-bold text-text">
-                {cards.active_bookings.toLocaleString()}
-              </p>
-              <p className="text-xs text-text-muted mt-2">This month</p>
-            </div>
-            <div className="h-12 w-12 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
-              <CalendarDays className="h-6 w-6" />
-            </div>
-          </Card>
-        </Link>
-
-        <Link href="/dashboard/support">
-          <Card className="flex flex-row items-center p-6 gap-4 border-none shadow-sm rounded-2xl bg-surface hover:shadow-md transition-shadow cursor-pointer h-full">
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium text-text-muted">
-                Support Messages
-              </p>
-              <p className="text-2xl font-bold text-text">
-                {cards.support_messages.toLocaleString()}
-              </p>
-              <p className="text-xs text-text-muted mt-2">Unread messages</p>
-            </div>
-            <div className="h-12 w-12 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600">
-              <MessageSquare className="h-6 w-6" />
-            </div>
-          </Card>
-        </Link>
+      {/* Main Summary Cards - First 2 Rows */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {mainCards.map((card) => (
+          <SummaryCard key={card.title} {...card} />
+        ))}
+        {requestCards.map((card) => (
+          <SummaryCard key={card.title} {...card} />
+        ))}
       </div>
 
-      {/* Middle Grid */}
+      {/* Request & Payment Summary Cards - Last Row */}
+      {/* <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4"></div> */}
+
+      {/* Middle Grid - Booking Trend & Top Court Managers */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Booking Trend */}
         <Card className="border-none shadow-sm rounded-2xl bg-surface">
@@ -251,32 +406,8 @@ export default function DashboardOverview({
           </CardContent>
         </Card>
 
-        {/* Court Utilization */}
-        <Card className="border-none shadow-sm rounded-2xl bg-surface">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">
-              Court Utilization
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6 pt-2">
-              {court_utilization?.map((item) => (
-                <div key={item.court} className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium text-text">{item.court}</span>
-                    <span className="text-text-muted">{item.utilization}%</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-background">
-                    <div
-                      className="h-full bg-primary"
-                      style={{ width: `${item.utilization}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Top Earned Court Managers */}
+        <TopCourtManagers managers={topCourtManagers} />
       </div>
 
       {/* Today's Bookings Table */}

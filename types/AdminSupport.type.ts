@@ -144,3 +144,19 @@ export interface SocketTicketEvent {
     role: string;
   };
 }
+
+export interface SocketBadgeEvent {
+  users: {
+    unread: number;
+  };
+  managers: {
+    unread: number;
+  };
+  total_unread: number;
+}
+
+export interface SupportBadgeData {
+  users: { unread: number };
+  managers: { unread: number };
+  total_unread: number;
+}

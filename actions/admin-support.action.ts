@@ -21,6 +21,7 @@ import type {
   AdminStatusUpdatePayload,
   AdminReplyPayload,
   AdminEscalatePayload,
+  SocketBadgeEvent,
 } from "@/types/AdminSupport.type";
 
 // ── GET stats ──────────────────────────────────────────────────────────────
@@ -228,6 +229,30 @@ export async function adminEscalateToManagerAction(
     }
     
     return { success: true, data: result.data as AdminEscalateResponse };
+  } catch (error) {
+    const err = handleApiError(error);
+    return { success: false, message: err.message };
+  }
+}
+
+
+export async function getSupportOverviewAction(): Promise<
+  | { success: true; data: SocketBadgeEvent }
+  | { success: false; message: string }
+> {
+  try {
+    const api = await getServerApi();
+    const response = await api.get("/admin/support/overview/");
+    const result = handleActionResponse(response.data);
+    
+    if (!result.success) {
+      return { 
+        success: false, 
+        message: result.message ?? "Failed to load support overview" 
+      };
+    }
+    
+    return { success: true, data: result.data as SocketBadgeEvent };
   } catch (error) {
     const err = handleApiError(error);
     return { success: false, message: err.message };

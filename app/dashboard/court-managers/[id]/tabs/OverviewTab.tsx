@@ -179,7 +179,7 @@ export default function OverviewTab({ manager }: OverviewTabProps) {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-text leading-none">
-                        ${parseFloat(booking.amount).toFixed(2)}
+                        €{parseFloat(booking.amount).toFixed(2)}
                       </p>
                       <span className="inline-block mt-2 text-[10px] font-medium px-2 py-0.5 rounded bg-green-100 text-green-700 leading-none">
                         {booking.status}
@@ -257,12 +257,12 @@ export default function OverviewTab({ manager }: OverviewTabProps) {
                   Activate Account
                 </Button>
               )}
-              <Button
+              {/* <Button
                 variant="outline"
                 className="w-full h-11 text-sm font-medium border-border shadow-none"
               >
                 <Send className="mr-2 h-4 w-4" /> Send Message
-              </Button>
+              </Button> */}
               <Button
                 variant="outline"
                 className="w-full h-11 text-sm font-medium border-[#10b981] text-[#10b981] hover:bg-[#10b981]/10 shadow-none"
@@ -295,7 +295,7 @@ export default function OverviewTab({ manager }: OverviewTabProps) {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-text-muted font-medium">Rating</span>
                   <span className="text-text">
@@ -312,13 +312,13 @@ export default function OverviewTab({ manager }: OverviewTabProps) {
                     }}
                   ></div>
                 </div>
-              </div>
+              </div> */}
 
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-text-muted font-medium">Revenue</span>
                   <span className="text-text">
-                    ${manager.overview.performance.revenue.toLocaleString()}
+                    €{manager.overview.performance.revenue.toLocaleString()}
                   </span>
                 </div>
                 <div className="h-2 w-full bg-background rounded-full overflow-hidden">

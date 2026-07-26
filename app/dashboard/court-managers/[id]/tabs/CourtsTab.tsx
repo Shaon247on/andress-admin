@@ -121,7 +121,7 @@ export default function CourtsTab({ managerId }: CourtsTabProps) {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-medium text-text">
-                      ${court.price_per_hour}
+                      €{court.price_per_hour}
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
@@ -130,7 +130,7 @@ export default function CourtsTab({ managerId }: CourtsTabProps) {
                     </td>
                     <td className="px-6 py-4 text-text">{court.bookings}</td>
                     <td className="px-6 py-4 font-medium text-[#10b981]">
-                      ${parseFloat(court.revenue).toLocaleString()}
+                      €{parseFloat(court.revenue).toLocaleString()}
                     </td>
                   </tr>
                 ))

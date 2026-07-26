@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { Permissions } from "@/types/Permissions.type";
+import { SupportBadgeProvider } from "@/context/SupportBadgeContext";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -17,20 +18,22 @@ export default function DashboardClientLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <Sidebar
-        permissions={permissions}
-        isMobileOpen={isMobileOpen}
-        onClose={() => setIsMobileOpen(false)}
-      />
+    <SupportBadgeProvider>
+      <div className="min-h-screen bg-background flex">
+        <Sidebar
+          permissions={permissions}
+          isMobileOpen={isMobileOpen}
+          onClose={() => setIsMobileOpen(false)}
+        />
 
-      <div className="flex flex-1 flex-col h-screen overflow-hidden">
-        <Header onMobileMenuOpen={() => setIsMobileOpen(true)} />
+        <div className="flex flex-1 flex-col h-screen overflow-hidden">
+          <Header onMobileMenuOpen={() => setIsMobileOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+          <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SupportBadgeProvider>
   );
 }

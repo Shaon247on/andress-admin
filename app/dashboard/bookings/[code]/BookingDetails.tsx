@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card } from '@/components/elements/card';
 import { 
   ArrowLeft, CalendarDays, Clock, MapPin, CheckCircle2, 
@@ -9,6 +10,7 @@ import {
   Crown, Star, Wallet, XCircle
 } from 'lucide-react';
 import type { BookingDetail, BookingPlayer } from '@/types/Booking.type';
+import { cn } from '@/lib/utils';
 
 interface BookingDetailsProps {
   booking: BookingDetail;
@@ -49,7 +51,7 @@ export default function BookingDetails({ booking }: BookingDetailsProps) {
     type: booking?.match_type || 'Competitive',
     visibility: booking?.visibility || 'Public',
     format: booking?.game_format || '5v5',
-    price: `$${booking?.price}`,
+    price: `€${booking?.price}`,
     date: new Date(booking?.date).toLocaleDateString('en-US', { 
       weekday: 'short', 
       day: 'numeric',
@@ -77,22 +79,77 @@ export default function BookingDetails({ booking }: BookingDetailsProps) {
       );
     }
 
+    // ── Get the image URL - prioritize avatar_url, fallback to photo_url ──
+    const imageUrl = player.avatar_url || player.photo_url || '';
+    const hasImage = imageUrl && imageUrl !== '';
+
     return (
       <Card key={`${teamName}-player-${player.slot}`} className="p-4 bg-surface rounded-2xl shadow-sm border border-border/50 flex items-center gap-4 hover:shadow-md transition-shadow">
-        <div className={`h-14 w-14 rounded-full bg-gradient-to-br ${
-          player.is_captain 
-            ? 'from-amber-100 to-amber-200 border-amber-400' 
-            : 'from-indigo-100 to-purple-100'
-        } border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center relative`}>
-          <span className="text-lg font-bold text-indigo-600">
-            {player.name?.charAt(0) || 'P'}
-          </span>
-          {player.is_captain && (
-            <div className="absolute -top-1 -right-1">
-              <Crown className="w-4 h-4 text-amber-500 fill-amber-400" />
+        {/* Avatar with Image */}
+        <div className="relative flex-shrink-0">
+          {hasImage ? (
+            <div className={cn(
+              "h-14 w-14 rounded-full overflow-hidden border-2 shadow-sm",
+              player.is_captain ? "border-amber-400" : "border-white"
+            )}>
+              <Image
+                src={imageUrl}
+                alt={player.name || 'Player'}
+                width={56}
+                height={56}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  // Fallback to initials if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    const fallback = document.createElement('div');
+                    fallback.className = `h-14 w-14 rounded-full bg-gradient-to-br ${
+                      player.is_captain 
+                        ? 'from-amber-100 to-amber-200' 
+                        : 'from-indigo-100 to-purple-100'
+                    } border-2 ${player.is_captain ? 'border-amber-400' : 'border-white'} shadow-sm flex items-center justify-center relative`;
+                    fallback.innerHTML = `
+                      <span class="text-lg font-bold text-indigo-600">
+                        ${player.name?.charAt(0) || 'P'}
+                      </span>
+                      ${player.is_captain ? `
+                        <div class="absolute -top-1 -right-1">
+                          <svg class="w-4 h-4 text-amber-500 fill-amber-400" viewBox="0 0 24 24">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                          </svg>
+                        </div>
+                      ` : ''}
+                    `;
+                    parent.parentElement?.replaceChild(fallback, parent);
+                  }
+                }}
+              />
+              {player.is_captain && (
+                <div className="absolute -top-1 -right-1">
+                  <Crown className="w-4 h-4 text-amber-500 fill-amber-400" />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={cn(
+              "h-14 w-14 rounded-full bg-gradient-to-br border-2 shadow-sm flex items-center justify-center relative",
+              player.is_captain 
+                ? "from-amber-100 to-amber-200 border-amber-400" 
+                : "from-indigo-100 to-purple-100 border-white"
+            )}>
+              <span className="text-lg font-bold text-indigo-600">
+                {player.name?.charAt(0) || 'P'}
+              </span>
+              {player.is_captain && (
+                <div className="absolute -top-1 -right-1">
+                  <Crown className="w-4 h-4 text-amber-500 fill-amber-400" />
+                </div>
+              )}
             </div>
           )}
         </div>
+
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1.5">
             <span className="font-bold text-text text-base">{player.name}</span>

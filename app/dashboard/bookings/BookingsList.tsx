@@ -202,7 +202,7 @@ export default function BookingsList({
                       {booking.duration} hour{booking.duration > 1 ? "s" : ""}
                     </td>
                     <td className="px-6 py-4 font-medium text-green-600 whitespace-nowrap">
-                      ${parseFloat(booking.price).toFixed(2)}
+                      €{parseFloat(booking.price).toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={booking.status} />

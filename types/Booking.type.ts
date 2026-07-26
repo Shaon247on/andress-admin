@@ -56,6 +56,8 @@ export interface BookingPlayer {
   ovr?: number;
   is_paid?: boolean;
   is_captain?: boolean;
+  photo_url: string;
+  avatar_url: string;
 }
 
 export interface BookingTeam {

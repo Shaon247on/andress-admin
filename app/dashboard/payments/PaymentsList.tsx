@@ -56,7 +56,6 @@ interface PaymentsListProps {
     page_size: number;
     total_pages: number;
   } | null;
-  stats: PaymentStats | null;
   errorMessage?: string;
   statsError?: string;
 }
@@ -64,75 +63,10 @@ interface PaymentsListProps {
 export default function PaymentsList({
   payments = [],
   pagination = null,
-  stats = null,
   errorMessage,
-  statsError,
 }: PaymentsListProps) {
   return (
     <>
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Primary green card */}
-        <Card className="flex flex-col p-6 gap-2 border-none shadow-sm rounded-2xl bg-[#00c853] text-white justify-center relative overflow-hidden">
-          <div className="absolute top-6 right-6">
-            <TrendingUp className="w-5 h-5 opacity-80" />
-          </div>
-          <DollarSign className="w-6 h-6 opacity-80" />
-          <p className="text-3xl font-bold mt-2">
-            ${stats ? parseFloat(stats.total_revenue).toLocaleString() : "0"}
-          </p>
-          <p className="text-sm font-medium opacity-90">Total Revenue</p>
-        </Card>
-
-        <Card className="flex flex-col p-6 gap-4 border border-border shadow-sm rounded-2xl bg-surface justify-center">
-          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-            <DollarSign className="w-5 h-5 text-blue-500" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-text">
-              $
-              {stats
-                ? parseFloat(stats.platform_commission).toLocaleString()
-                : "0"}
-            </p>
-            <p className="text-xs font-medium text-text-muted mt-1">
-              Platform Commission (15%)
-            </p>
-          </div>
-        </Card>
-
-        <Card className="flex flex-col p-6 gap-4 border border-border shadow-sm rounded-2xl bg-surface justify-center">
-          <div className="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center">
-            <Clock className="w-5 h-5 text-yellow-500" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-text">
-              $
-              {stats
-                ? parseFloat(stats.pending_payments).toLocaleString()
-                : "0"}
-            </p>
-            <p className="text-xs font-medium text-text-muted mt-1">
-              Pending Payments
-            </p>
-          </div>
-        </Card>
-
-        <Card className="flex flex-col p-6 gap-4 border border-border shadow-sm rounded-2xl bg-surface justify-center">
-          <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
-            <CheckCircle2 className="w-5 h-5 text-purple-500" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-text">
-              {stats ? stats.completed_transactions : 0}
-            </p>
-            <p className="text-xs font-medium text-text-muted mt-1">
-              Completed Transactions
-            </p>
-          </div>
-        </Card>
-      </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="flex-1 w-full">
@@ -223,7 +157,7 @@ export default function PaymentsList({
                       {payment.period}
                     </td>
                     <td className="px-6 py-4 text-text font-bold whitespace-nowrap">
-                      ${parseFloat(payment.amount).toLocaleString()}
+                      €{parseFloat(payment.amount).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 text-text-muted whitespace-nowrap text-sm">
                       {new Date(payment.created_at).toLocaleDateString(

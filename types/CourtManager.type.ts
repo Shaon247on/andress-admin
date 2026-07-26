@@ -18,6 +18,7 @@ export interface CourtManagerResult {
   bookings: number;
   revenue: string;
   status: "active" | "inactive";
+  photo_url: string;
 }
 
 export interface CourtManagersListResponse {

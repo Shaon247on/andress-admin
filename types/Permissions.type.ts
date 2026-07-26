@@ -10,6 +10,7 @@ export interface Permissions {
   bookings: boolean;
   support: boolean;
   payments: boolean;
+  revenue: boolean;
 }
 
 export interface SidebarItem {
@@ -17,4 +18,5 @@ export interface SidebarItem {
   href: string;
   icon: any;
   permissionKey?: keyof Permissions;
+  showBadge?: boolean;
 }

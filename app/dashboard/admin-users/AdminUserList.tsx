@@ -8,6 +8,7 @@ import AdminActionDialog from "./AdminActionDialog";
 import { Card } from "@/components/ui/card";
 import { Mail, Clock, Shield, ShieldCheck, Plus } from "lucide-react";
 import type { AdminUserResult } from "@/types/AdminUser.type";
+import Image from "next/image";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const isActive = status === "active" || status === "Active";
@@ -83,20 +84,43 @@ export default function AdminUserList({
             <tbody className="divide-y divide-border">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-text-muted">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-text-muted"
+                  >
                     No admin users found.
                   </td>
                 </tr>
               ) : (
                 users.map((admin) => (
-                  <tr key={admin.id} className="bg-surface hover:bg-background/50 transition-colors">
+                  <tr
+                    key={admin.id}
+                    className="bg-surface hover:bg-background/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-[#e2f5ec] flex items-center justify-center text-primary font-bold">
-                          {admin.full_name?.charAt(0) || admin.email?.charAt(0)}
-                        </div>
+                        {admin.photo_url === "" ? (
+                          <div
+                            className={`h-10 w-10 flex items-center justify-center rounded-full text-white font-medium bg-primary`}
+                          >
+                            {admin.full_name?.charAt(0) ||
+                              admin.email?.charAt(0)}
+                          </div>
+                        ) : (
+                          <>
+                            <Image
+                              width={30}
+                              height={30}
+                              src={admin.photo_url}
+                              alt="User Photo"
+                              className="h-10 w-10 flex items-center justify-center rounded-full text-white font-medium bg-primary"
+                            />
+                          </>
+                        )}
                         <div>
-                          <div className="font-medium text-text">{admin.full_name || admin.email}</div>
+                          <div className="font-medium text-text">
+                            {admin.full_name || admin.email}
+                          </div>
                           <div className="text-text-muted flex items-center gap-1 mt-1 text-xs">
                             <Mail className="h-3 w-3" />
                             {admin.email}
@@ -111,7 +135,9 @@ export default function AdminUserList({
                         ) : (
                           <Shield className="h-4 w-4 text-slate-500" />
                         )}
-                        <span className="font-medium">{admin.role_display || admin.role}</span>
+                        <span className="font-medium">
+                          {admin.role_display || admin.role}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -121,11 +147,14 @@ export default function AdminUserList({
                       <div className="flex items-center gap-1.5 text-text-muted text-xs font-medium">
                         <Clock className="h-3.5 w-3.5" />
                         {admin.last_login
-                          ? new Date(admin.last_login).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })
+                          ? new Date(admin.last_login).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )
                           : "-"}
                       </div>
                     </td>

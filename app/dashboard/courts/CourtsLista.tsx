@@ -214,7 +214,7 @@ export default function CourtsList({
                       </span>
                     </td>
                     <td className="px-6 py-4 text-text font-medium">
-                      ${court.price_per_hour}
+                      €{court.price_per_hour}
                     </td>
                     <td className="px-6 py-4 text-text font-medium">
                       {court.bookings}

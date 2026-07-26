@@ -9,7 +9,14 @@ import { Button } from "@/components/ui/button";
 import SearchInput from "@/components/common/SearchInput";
 import Pagination from "@/components/common/Pagination";
 import SelectFilter from "@/components/common/SelectFilter";
-import { Download, Loader2, MoreVertical, Eye, UserX, UserCheck } from "lucide-react";
+import {
+  Download,
+  Loader2,
+  MoreVertical,
+  Eye,
+  UserX,
+  UserCheck,
+} from "lucide-react";
 import UserActionDialog from "./UserActionDialog";
 import type { UserResult } from "@/types/User.type";
 import { exportUsersAction } from "@/actions/user.action";
@@ -20,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Image from "next/image";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const isActive = status === "active";
@@ -55,7 +63,7 @@ export default function UsersList({
     null,
   );
   const [exporting, setExporting] = useState(false);
-  
+
   const handleAction = (type: "suspend" | "activate", user: UserResult) => {
     setActionUser(user);
     setActionType(type);
@@ -189,11 +197,24 @@ export default function UsersList({
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`h-10 w-10 flex items-center justify-center rounded-full text-white font-medium bg-primary`}
-                        >
-                          {user.full_name?.charAt(0) || user.email?.charAt(0)}
-                        </div>
+                        {user.photo_url === "" ? (
+                          <div
+                            className={`h-10 w-10 flex items-center justify-center rounded-full text-white font-medium bg-primary`}
+                          >
+                            {user.full_name?.charAt(0) || user.email?.charAt(0)}
+                          </div>
+                        ) : (
+                          <>
+                            <Image
+                              width={30}
+                              height={30}
+                              src={user.photo_url}
+                              alt="User Photo"
+                              className="h-10 w-10 flex items-center justify-center rounded-full text-white font-medium bg-primary"
+                            />
+                          </>
+                        )}
+
                         <span className="font-medium text-text">
                           {user.full_name || "N/A"}
                         </span>
@@ -229,8 +250,8 @@ export default function UsersList({
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent 
-                          align="end" 
+                        <DropdownMenuContent
+                          align="end"
                           className="w-48 rounded-xl border-border bg-surface shadow-lg"
                         >
                           <DropdownMenuItem asChild>
@@ -251,8 +272,8 @@ export default function UsersList({
                               }
                             }}
                             className={`flex items-center gap-2 cursor-pointer ${
-                              user.status === "active" 
-                                ? "text-red-600 hover:text-red-700" 
+                              user.status === "active"
+                                ? "text-red-600 hover:text-red-700"
                                 : "text-green-600 hover:text-green-700"
                             }`}
                           >

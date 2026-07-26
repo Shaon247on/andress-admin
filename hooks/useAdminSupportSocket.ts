@@ -1,24 +1,29 @@
-// hooks/useAdminSupportSocket.ts
-
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getDecryptedAccessToken } from '@/actions/token.action';
-import type { SocketReplyEvent, SocketStatusEvent, SocketTicketEvent } from '@/types/AdminSupport.type';
+import type { 
+  SocketReplyEvent, 
+  SocketStatusEvent, 
+  SocketTicketEvent,
+  SocketBadgeEvent  // ← Import the new type
+} from '@/types/AdminSupport.type';
 
-const SOCKET_URL = 'https://api.athlongoapp.com';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ||'https://api.athlongoapp.com';
 
 interface AdminSupportSocketProps {
   onReply?: (data: SocketReplyEvent) => void;
   onStatus?: (data: SocketStatusEvent) => void;
   onNewTicket?: (ticket: SocketTicketEvent) => void;
+  onBadgeUpdate?: (data: SocketBadgeEvent) => void;  // ← Add this
 }
 
 export function useAdminSupportSocket({
   onReply,
   onStatus,
   onNewTicket,
+  onBadgeUpdate,  // ← Add this
 }: AdminSupportSocketProps = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
@@ -72,6 +77,12 @@ export function useAdminSupportSocket({
           if (onNewTicket) onNewTicket(ticket);
         });
 
+        // ── NEW: Support Badge Event ──
+        socket.on('support_badge', (data: SocketBadgeEvent) => {
+          console.log('Support badge update received:', data);
+          if (onBadgeUpdate) onBadgeUpdate(data);
+        });
+
         socketRef.current = socket;
 
       } catch (error) {
@@ -87,7 +98,7 @@ export function useAdminSupportSocket({
         socketRef.current = null;
       }
     };
-  }, [onReply, onStatus, onNewTicket]);
+  }, [onReply, onStatus, onNewTicket, onBadgeUpdate]);  // ← Add onBadgeUpdate to dependencies
 
   return { socket: socketRef.current, isConnected };
 }

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import UserActionDialog from "../UserActionDialog";
 import type { UserDetail } from "@/types/User.type";
+import Image from "next/image";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const isActive = status === "active";
@@ -92,9 +93,18 @@ export default function UserDetails({ user, errorMessage }: UserDetailsProps) {
       <Card className="border-none shadow-sm rounded-3xl bg-surface p-8">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
           <div className="h-32 w-32 rounded-full bg-primary/10 border-4 border-[#10b981] flex items-center justify-center text-primary font-bold text-4xl shrink-0 overflow-hidden relative">
-            <span className="text-emerald-600">
+          {user.photo_url === "" ? (<span className="text-emerald-600">
               {user.full_name?.charAt(0) || user.email?.charAt(0)}
-            </span>
+            </span>):(
+              <Image
+              alt="User Photo"
+              src={user.photo_url}
+              width={150}
+              height={150}
+              className="w-full h-full object-center rounded-full object-cover"
+              />
+            )}
+            
           </div>
           <div className="flex-1 text-center md:text-left w-full">
             <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-3">
@@ -124,9 +134,9 @@ export default function UserDetails({ user, errorMessage }: UserDetailsProps) {
                     <UserCheck className="w-4 h-4 mr-2" /> Activate
                   </Button>
                 )}
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-10 px-5 font-bold shadow-sm">
+                {/* <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-10 px-5 font-bold shadow-sm">
                   <MessageSquare className="w-4 h-4 mr-2" /> Send Message
-                </Button>
+                </Button> */}
               </div>
             </div>
 
@@ -180,11 +190,22 @@ export default function UserDetails({ user, errorMessage }: UserDetailsProps) {
           </h3>
 
           <div className="flex flex-col items-center mb-8 relative z-10">
-            <div className="relative w-32 h-40 bg-orange-300/30 rounded-2xl border border-orange-200/50 flex items-center justify-center backdrop-blur-sm mb-5 shadow-xl">
-              <div className="absolute top-3 left-3 text-2xl font-black drop-shadow-md">
+            <div className="relative w-32 h-40 p-2 bg-orange-300/30 rounded-2xl border border-orange-200/50 flex items-center justify-center backdrop-blur-sm mb-5 shadow-xl">
+              <div className="absolute top-3 left-3 text-2xl font-black drop-shadow-md z-30">
                 {user.player_card?.overall_rating || 0}
               </div>
-              <div className="text-5xl opacity-80">👤</div>
+              {user.avatar_url === "" ? (
+                <div className="text-5xl opacity-80">👤</div>
+              ) : (
+                <Image
+                  src={user.avatar_url}
+                  alt={user.photo_url || "User Avatar"}
+                  width={100}
+                  height={100}
+                  className="w-full h-full object-cover object-center relative z-10"
+                />
+              )}
+              {/* <div className="text-5xl opacity-80">👤</div> */}
             </div>
             <div className="flex items-center gap-2 bg-black/20 px-4 py-1.5 rounded-full backdrop-blur-sm">
               <span className="text-lg">🇧🇷</span>
@@ -218,7 +239,7 @@ export default function UserDetails({ user, errorMessage }: UserDetailsProps) {
               Match Summary
             </h3>
 
-            <div className="grid grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-3 gap-4 mb-8">
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-center">
                 <p className="text-3xl font-black text-text mb-2">
                   {user.match_summary?.matches || 0}
@@ -243,14 +264,14 @@ export default function UserDetails({ user, errorMessage }: UserDetailsProps) {
                   Lose
                 </p>
               </div>
-              <div className="bg-[#fffbeb] border border-[#fde68a] rounded-2xl p-5 text-center">
+              {/* <div className="bg-[#fffbeb] border border-[#fde68a] rounded-2xl p-5 text-center">
                 <p className="text-3xl font-black text-yellow-600 mb-2">
                   {user.match_summary?.mvp || 0}
                 </p>
                 <p className="text-[10px] text-yellow-600/70 uppercase tracking-widest font-bold">
                   MVP
                 </p>
-              </div>
+              </div> */}
             </div>
 
             <div className="space-y-3">

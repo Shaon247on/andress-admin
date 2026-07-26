@@ -6,6 +6,8 @@ export interface UserResult {
   matches: number;
   status: 'active' | 'suspended';
   date_joined: string;
+  photo_url: string;
+  avatar_url: string;
 }
 
 export interface UsersListResponse {
@@ -82,6 +84,7 @@ export interface UserDetail {
   username: string;
   bio: string;
   photo_url: string;
+  avatar_url: string;
   counts: UserCounts;
   player_card: PlayerCard;
   match_summary: MatchSummary;

@@ -1,5 +1,3 @@
-// app/dashboard/support/components/AdminSupportClient.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -10,15 +8,31 @@ import SearchInput from "@/components/common/SearchInput";
 import Pagination from "@/components/common/Pagination";
 import SelectFilter from "@/components/common/SelectFilter";
 import AdminChatView from "./AdminChatView";
-import { Users, UserCog, MessageSquare } from "lucide-react";
+import { Users, UserCog, MessageSquare, MoreVertical, Eye, CheckCircle } from "lucide-react";
 import type {
   AdminSupportTicket,
   AdminSupportStats,
 } from "@/types/AdminSupport.type";
 import { useAdminSupportSocket } from "@/hooks/useAdminSupportSocket";
+import { adminUpdateTicketStatusAction } from "@/actions/admin-support.action";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useSupportBadge } from "@/context/SupportBadgeContext";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusMap: Record<string, { label: string; className: string }> = {
@@ -80,16 +94,22 @@ export default function AdminSupportClient({
   const [liveTickets, setLiveTickets] =
     useState<AdminSupportTicket[]>(initialTickets);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // ── Get badge data from context ──
+  const { userUnread, managerUnread, isConnected: badgeConnected } = useSupportBadge();
+  
+  // Resolve dialog states
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [resolvingTicket, setResolvingTicket] = useState<AdminSupportTicket | null>(null);
+  const [resolving, setResolving] = useState(false);
 
   // Socket for real-time updates
   const { isConnected: socketConnected } = useAdminSupportSocket({
     onNewTicket: (ticket) => {
-      // Add new ticket to the list
       setLiveTickets((prev) => [ticket, ...prev]);
       toast.info(`New ticket from ${ticket.user.full_name}`);
     },
     onReply: (data) => {
-      // Update ticket reply count and status
       setLiveTickets((prev) =>
         prev.map((t) =>
           t.code === data.ticket_code
@@ -99,21 +119,19 @@ export default function AdminSupportClient({
                 status: data.status as any,
               }
             : t,
-        ),
+        )
       );
-      // If the ticket is currently open in chat, update it
       if (selectedTicket && data.ticket_code === selectedTicket.code) {
         // The chat view will handle this via its own socket listener
       }
     },
     onStatus: (data) => {
-      // Update ticket status
       setLiveTickets((prev) =>
         prev.map((t) =>
           t.code === data.code
             ? { ...t, status: data.status as any, locked: data.locked }
             : t,
-        ),
+        )
       );
       if (selectedTicket && data.code === selectedTicket.code) {
         setSelectedTicket((prev) =>
@@ -151,6 +169,39 @@ export default function AdminSupportClient({
     router.refresh();
   };
 
+  const handleResolveClick = (ticket: AdminSupportTicket) => {
+    if (ticket.status === 'resolved') {
+      toast.info('This ticket is already resolved');
+      return;
+    }
+    setResolvingTicket(ticket);
+    setResolveDialogOpen(true);
+  };
+
+  const handleResolveConfirm = async () => {
+    if (!resolvingTicket) return;
+    
+    setResolving(true);
+    const res = await adminUpdateTicketStatusAction(resolvingTicket.code, { status: 'resolved' });
+    
+    if (res.success) {
+      toast.success(res.data.message);
+      setLiveTickets((prev) =>
+        prev.map((t) =>
+          t.code === resolvingTicket.code
+            ? { ...t, status: 'resolved' as any, locked: true }
+            : t,
+        )
+      );
+      setResolveDialogOpen(false);
+      setResolvingTicket(null);
+      router.refresh();
+    } else {
+      toast.error(res.message);
+    }
+    setResolving(false);
+  };
+
   if (errorMessage) {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -161,10 +212,14 @@ export default function AdminSupportClient({
 
   return (
     <>
-      {/* Tabs */}
+      {/* Tabs with Unread Counts */}
       <div className="flex items-center space-x-6 border-b border-border">
         {AudienceTabs.map((tab) => {
           const Icon = tab.icon;
+          // Get unread count based on tab
+          const unreadCount = tab.id === "users" ? userUnread : managerUnread;
+          const hasUnread = unreadCount > 0;
+          
           return (
             <button
               key={tab.id}
@@ -177,6 +232,19 @@ export default function AdminSupportClient({
             >
               <Icon className="w-4 h-4" />
               {tab.label}
+              
+              {/* Unread Badge */}
+              {hasUnread && (
+                <span className={cn(
+                  "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold",
+                  audience === tab.id
+                    ? "bg-[#10b981] text-white"
+                    : "bg-red-500 text-white"
+                )}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+              
               {audience === tab.id && (
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#10b981] rounded-t-full" />
               )}
@@ -263,9 +331,6 @@ export default function AdminSupportClient({
                   Status
                 </th>
                 <th scope="col" className="px-6 py-4">
-                  Replies
-                </th>
-                <th scope="col" className="px-6 py-4">
                   Created
                 </th>
                 <th scope="col" className="px-6 py-4 text-right">
@@ -314,9 +379,6 @@ export default function AdminSupportClient({
                     <td className="px-6 py-4">
                       <StatusBadge status={ticket.status} />
                     </td>
-                    <td className="px-6 py-4 text-text-muted text-center">
-                      {ticket.reply_count}
-                    </td>
                     <td className="px-6 py-4 text-text-muted text-xs whitespace-nowrap">
                       {new Date(ticket.created_at).toLocaleDateString("en-US", {
                         month: "short",
@@ -325,15 +387,36 @@ export default function AdminSupportClient({
                       })}
                     </td>
                     <td className="px-6 py-4 text-right whitespace-nowrap">
-                      <Link href={`/dashboard/support/${ticket.code}`}>
-                        <Button
-                          size="sm"
-                          className="h-8 bg-[#10b981] hover:bg-[#059669] text-white text-xs border-none shadow-none font-medium px-3"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-                          Chat
-                        </Button>
-                      </Link>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem asChild>
+                            <Link
+                              href={`/dashboard/support/${ticket.code}`}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span>View Chat</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleResolveClick(ticket)}
+                            className="flex items-center gap-2 cursor-pointer text-green-600 hover:text-green-700"
+                            disabled={ticket.status === 'resolved'}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            <span>{ticket.status === 'resolved' ? 'Resolved' : 'Resolve'}</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))
@@ -354,6 +437,34 @@ export default function AdminSupportClient({
         ticket={selectedTicket}
         audience={audience}
       />
+
+      {/* Resolve Confirmation Dialog */}
+      <Dialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resolve Ticket</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to resolve this ticket? This will lock the thread and prevent further replies.
+            </DialogDescription>
+          </DialogHeader>
+          {resolvingTicket && (
+            <div className="mt-2 p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium">{resolvingTicket.subject}</p>
+              <p className="text-xs text-slate-500">Ticket #{resolvingTicket.code}</p>
+              <p className="text-xs text-slate-500">From: {resolvingTicket.user.full_name}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResolveDialogOpen(false)} disabled={resolving}>
+              Cancel
+            </Button>
+            <Button variant="default" onClick={handleResolveConfirm} disabled={resolving}>
+              {resolving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> : null}
+              Resolve
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

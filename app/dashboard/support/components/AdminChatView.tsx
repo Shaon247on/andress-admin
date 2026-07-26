@@ -210,7 +210,7 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
         const uniqueThread = deduplicateMessages(res.data.thread);
         setThread(uniqueThread);
       } else if (res.data?.ticket?.thread) {
-        const uniqueThread = deduplicateMessages(res.data.ticket.thread);
+        const uniqueThread = deduplicateMessages(res?.data?.ticket?.thread);
         setThread(uniqueThread);
       }
       if (res.data?.ticket) {

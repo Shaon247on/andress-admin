@@ -19,6 +19,8 @@ export interface AdminUserResult {
   status: string;
   last_login: string | null;
   permissions: Permissions;
+  photo_url: string;
+  avatar_url: string;
 }
 
 export interface AdminUsersListResponse {

@@ -171,7 +171,7 @@ export default function PaymentDetails({ payment }: PaymentDetailsProps) {
             {/* Financial Summary */}
             <Card className="border border-border shadow-sm rounded-2xl bg-surface p-6">
               <h2 className="text-sm font-bold text-text flex items-center gap-2 mb-4">
-                <span className="font-mono font-bold">$</span>
+                <span className="font-mono font-bold">€</span>
                 Financial Summary - {payment.financial_summary.period}
               </h2>
 
@@ -181,7 +181,7 @@ export default function PaymentDetails({ payment }: PaymentDetailsProps) {
                     Withdrawal Amount
                   </span>
                   <span className="text-sm font-bold text-text">
-                    $
+                    €
                     {parseFloat(
                       payment.financial_summary.withdrawal_amount,
                     ).toLocaleString()}

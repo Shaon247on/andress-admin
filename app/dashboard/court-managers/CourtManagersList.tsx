@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ManagerActionDialog from "./ManagerActionDialog";
+import Image from "next/image";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const isActive = status === "active";
@@ -141,7 +142,7 @@ export default function CourtManagersList({
           </div>
           <div>
             <p className="text-2xl font-bold text-text">
-              ${(stats?.total_revenue ?? 0).toLocaleString()}
+              €{(stats?.total_revenue ?? 0).toLocaleString()}
             </p>
             <p className="text-sm font-medium text-text-muted mt-1">
               Total Revenue
@@ -233,12 +234,32 @@ export default function CourtManagersList({
                     key={manager.id}
                     className="bg-surface hover:bg-background/50 transition-colors"
                   >
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-text">
-                        {manager.full_name}
-                      </div>
-                      <div className="text-text-muted text-xs mt-1">
-                        {manager.email}
+                    <td className="px-6 py-4 flex items-center gap-2">
+                      {manager.photo_url === "" ? (
+                        <div
+                          className={`h-10 w-10 flex items-center justify-center rounded-full text-white font-medium bg-primary`}
+                        >
+                          {manager.full_name?.charAt(0) ||
+                            manager.email?.charAt(0)}
+                        </div>
+                      ) : (
+                        <>
+                          <Image
+                            width={30}
+                            height={30}
+                            src={manager.photo_url}
+                            alt="Court Manager Photo"
+                            className="h-10 w-10 flex items-center justify-center rounded-full text-white font-medium bg-primary"
+                          />
+                        </>
+                      )}
+                      <div>
+                        <div className="font-medium text-text">
+                          {manager.full_name}
+                        </div>
+                        <div className="text-text-muted text-xs mt-1">
+                          {manager.email}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-text">{manager.venue}</td>
@@ -252,7 +273,7 @@ export default function CourtManagersList({
                       {manager.bookings}
                     </td>
                     <td className="px-6 py-4 text-text font-medium">
-                      ${parseFloat(manager.revenue).toLocaleString()}
+                      €{parseFloat(manager.revenue).toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={manager.status} />

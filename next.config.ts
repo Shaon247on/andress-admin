@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
         hostname: "api.athlongoapp.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
     ],
   },
 

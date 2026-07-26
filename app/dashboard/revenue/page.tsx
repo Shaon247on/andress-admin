@@ -1,8 +1,8 @@
-import PaymentsList from "./PaymentsList";
 import {
   getPaymentsAction,
   getPaymentStatsAction,
 } from "@/actions/payment.action";
+import RevenuePage from "./RevenueList";
 
 export default async function PaymentsPage({
   searchParams,
@@ -30,18 +30,22 @@ export default async function PaymentsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-text">
-          Payment Management
+          Revenue Management
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Monitor transactions and revenue
+          Manage your earnings and withdrawals
         </p>
       </div>
 
-      <PaymentsList
+      {/* <PaymentsList
         payments={payments}
         pagination={pagination}
+        stats={stats}
         errorMessage={!paymentsRes.success ? paymentsRes.message : undefined}
-      />
+        statsError={!statsRes.success ? statsRes.message : undefined}
+      /> */}
+
+      <RevenuePage />
     </div>
   );
 }

@@ -119,7 +119,7 @@ export default function CourtManagerDetails({
           </div>
           <div>
             <p className="text-3xl font-bold text-text">
-              ${parseFloat(manager.cards.revenue).toLocaleString()}
+              €{parseFloat(manager.cards.revenue).toLocaleString()}
             </p>
             <p className="text-sm text-text-muted mt-1">Monthly Revenue</p>
           </div>
