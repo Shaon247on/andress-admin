@@ -9,5 +9,5 @@ export const paymentsQuerySchema = z.object({
 });
 
 export const rejectPaymentSchema = z.object({
-  note: z.string().min(1, 'Rejection reason is required'),
+  reason: z.string().min(1, 'Rejection reason is required'),
 });

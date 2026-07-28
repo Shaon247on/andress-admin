@@ -102,7 +102,7 @@ export interface ApprovePaymentResponse {
 }
 
 export interface RejectPaymentPayload {
-  note: string;
+  reason: string;
 }
 
 export interface RejectPaymentResponse {
