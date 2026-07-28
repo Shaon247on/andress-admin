@@ -16,6 +16,7 @@ import type {
   CreateAdminUserPayload,
   EditAdminUserPayload,
 } from "@/types/AdminUser.type";
+import { revalidatePath } from "next/cache";
 
 // ── GET all admin users ─────────────────────────────────────────────────────
 
@@ -93,6 +94,7 @@ export async function editAdminUserAction(id: string, raw: unknown): Promise<
     if (!result.success) {
       return { success: false, message: result.message ?? "Failed to update admin user" };
     }
+    revalidatePath("dashboard/admin-users")
     return {
       success: true,
       message: result.data?.message ?? "Admin user updated successfully.",

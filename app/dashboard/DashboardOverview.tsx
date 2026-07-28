@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Crown,
   EuroIcon,
+  UsersRound,
 } from "lucide-react";
 import {
   LineChart,
@@ -32,7 +33,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import type { DashboardData } from "@/types/Dashboard.type";
+import type { DashboardData, TopManager } from "@/types/Dashboard.type";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const isConfirmed = status === "confirmed";
@@ -97,15 +98,11 @@ const SummaryCard = ({
 };
 
 // ── Top Earned Court Managers Component ──
-interface TopCourtManager {
-  id: string;
-  name: string;
-  email: string;
-  totalEarnings: number;
-  courtCount: number;
+interface TopCourtManagersProps {
+  managers: TopManager[];
 }
 
-const TopCourtManagers = ({ managers }: { managers: TopCourtManager[] }) => {
+const TopCourtManagers = ({ managers }: TopCourtManagersProps) => {
   return (
     <Card className="border-none shadow-sm rounded-2xl bg-surface">
       <div className="flex items-center justify-between p-6 pb-2">
@@ -124,36 +121,44 @@ const TopCourtManagers = ({ managers }: { managers: TopCourtManager[] }) => {
       </div>
       <CardContent>
         <div className="space-y-4 pt-2">
-          {managers.map((manager, index) => (
-            <div
-              key={manager.id}
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-background/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-6 h-6">
-                  {index === 0 ? (
-                    <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                  ) : (
-                    <span className="text-sm font-medium text-text-muted">
-                      #{index + 1}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-text">{manager.name}</p>
-                  <p className="text-xs text-text-muted">{manager.email}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-green-600">
-                  €{manager.totalEarnings.toLocaleString()}
-                </p>
-                <p className="text-xs text-text-muted">
-                  {manager.courtCount} courts
-                </p>
-              </div>
+          {managers.length === 0 ? (
+            <div className="text-center py-8 text-text-muted text-sm">
+              No manager data available
             </div>
-          ))}
+          ) : (
+            managers.map((manager, index) => (
+              <div
+                key={manager.manager_id}
+                className="flex items-center justify-between p-3 rounded-lg hover:bg-background/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-6 h-6">
+                    {index === 0 ? (
+                      <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    ) : (
+                      <span className="text-sm font-medium text-text-muted">
+                        #{index + 1}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-text">{manager.manager}</p>
+                    <p className="text-xs text-text-muted">
+                      {manager.bookings} bookings
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-green-600">
+                    €{parseFloat(manager.revenue).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    {manager.bookings} bookings
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </CardContent>
     </Card>
@@ -185,63 +190,9 @@ export default function DashboardOverview({
     );
   }
 
-  const { cards, booking_trend, todays_bookings } = data;
+  const { cards, booking_trend, top_managers_by_revenue, todays_bookings } = data;
 
-  // ── Static data for request stats (since API doesn't provide these) ──
-  const requestStats = {
-    total_requests: 245,
-    pending_requests: 18,
-    approved_requests: 196,
-    rejected_requests: 31,
-  };
-
-  // ── Static data for pending payments ──
-  const pendingPayments = {
-    total_pending: 12,
-    total_amount: 2847.5,
-    overdue: 3,
-  };
-
-  // ── Static data for top earned court managers ──
-  const topCourtManagers: TopCourtManager[] = [
-    {
-      id: "1",
-      name: "Aminul Islam Shaon",
-      email: "i664x1kagv@lnovic.com",
-      totalEarnings: 31595,
-      courtCount: 26,
-    },
-    {
-      id: "2",
-      name: "Arena FC",
-      email: "testmgr@test.athlongo",
-      totalEarnings: 7340,
-      courtCount: 5,
-    },
-    {
-      id: "3",
-      name: "Chutiya Jubi",
-      email: "ddsc628dwj@bwmyga.com",
-      totalEarnings: 3000,
-      courtCount: 9,
-    },
-    {
-      id: "4",
-      name: "Demo Arena",
-      email: "demomgr@profileseed.athlongo",
-      totalEarnings: 1460,
-      courtCount: 3,
-    },
-    {
-      id: "5",
-      name: "John Doe",
-      email: "wpchxizdgz@bwmyga.com",
-      totalEarnings: 1107.5,
-      courtCount: 3,
-    },
-  ];
-
-  // ── Main cards data (first 2 rows) ──
+  // ── Main cards data ──
   const mainCards = [
     {
       title: "Total Users",
@@ -290,20 +241,20 @@ export default function DashboardOverview({
     },
   ];
 
-  // ── Request cards data (last row) ──
+  // ── Request cards data ──
   const requestCards = [
     {
-      title: "Total Requests",
-      value: requestStats.total_requests,
-      description: "All time requests",
-      icon: <FileText className="h-6 w-6" />,
-      iconBgColor: "bg-slate-100",
-      iconTextColor: "text-slate-600",
-      href: "/dashboard/requests",
+      title: "Active Staff",
+      value: cards.active_staff || 0,
+      description: "Active staff members",
+      icon: <UsersRound className="h-6 w-6" />,
+      iconBgColor: "bg-indigo-100",
+      iconTextColor: "text-indigo-600",
+      href: "/dashboard/staff",
     },
     {
-      title: "Court Manager Requests",
-      value: requestStats.pending_requests,
+      title: "Court Manager Request",
+      value: cards.pending_requests,
       description: "Awaiting response",
       icon: <Clock className="h-6 w-6" />,
       iconBgColor: "bg-amber-100",
@@ -313,8 +264,8 @@ export default function DashboardOverview({
     },
     {
       title: "Pending Payments",
-      value: pendingPayments.total_pending,
-      description: `€${pendingPayments.total_amount.toLocaleString()} total • ${pendingPayments.overdue} overdue`,
+      value: cards.pending_payments || 0,
+      description: "Pending payment requests",
       icon: <EuroIcon className="h-6 w-6" />,
       iconBgColor: "bg-orange-100",
       iconTextColor: "text-orange-600",
@@ -322,6 +273,9 @@ export default function DashboardOverview({
       valueColor: "text-orange-600",
     },
   ];
+
+  // Combine all cards
+  const allCards = [...mainCards, ...requestCards];
 
   return (
     <div className="space-y-6">
@@ -334,18 +288,12 @@ export default function DashboardOverview({
         </p>
       </div>
 
-      {/* Main Summary Cards - First 2 Rows */}
+      {/* Summary Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {mainCards.map((card) => (
-          <SummaryCard key={card.title} {...card} />
-        ))}
-        {requestCards.map((card) => (
+        {allCards.map((card) => (
           <SummaryCard key={card.title} {...card} />
         ))}
       </div>
-
-      {/* Request & Payment Summary Cards - Last Row */}
-      {/* <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4"></div> */}
 
       {/* Middle Grid - Booking Trend & Top Court Managers */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -379,6 +327,7 @@ export default function DashboardOverview({
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: "#64748B" }}
+                    allowDecimals={false}
                   />
                   <Tooltip
                     formatter={(value: number) => [
@@ -407,7 +356,7 @@ export default function DashboardOverview({
         </Card>
 
         {/* Top Earned Court Managers */}
-        <TopCourtManagers managers={topCourtManagers} />
+        <TopCourtManagers managers={top_managers_by_revenue || []} />
       </div>
 
       {/* Today's Bookings Table */}
@@ -431,10 +380,13 @@ export default function DashboardOverview({
             <thead className="bg-background text-text-muted font-medium border-y border-border">
               <tr>
                 <th scope="col" className="px-6 py-3">
+                  Booking Code
+                </th>
+                <th scope="col" className="px-6 py-3">
                   Court
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Court Name
+                  Club
                 </th>
                 <th scope="col" className="px-6 py-3">
                   Time
@@ -451,7 +403,7 @@ export default function DashboardOverview({
               {todays_bookings.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-6 py-8 text-center text-text-muted"
                   >
                     No bookings for today.
@@ -464,10 +416,13 @@ export default function DashboardOverview({
                     className="bg-surface hover:bg-background/50 transition-colors"
                   >
                     <td className="px-6 py-4 font-medium text-text">
-                      {booking.court.facility}
+                      {booking.code}
                     </td>
                     <td className="px-6 py-4 text-text-muted">
                       {booking.court.name}
+                    </td>
+                    <td className="px-6 py-4 text-text-muted">
+                      {booking.court.club_name || booking.court.facility}
                     </td>
                     <td className="px-6 py-4 text-text-muted">
                       {booking.time}

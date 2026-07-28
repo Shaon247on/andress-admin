@@ -58,6 +58,8 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export default function PaymentDetails({ payment }: PaymentDetailsProps) {
+
+  console.log("the payment::",payment)
   const router = useRouter();
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);

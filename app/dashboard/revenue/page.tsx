@@ -1,10 +1,7 @@
-import {
-  getPaymentsAction,
-  getPaymentStatsAction,
-} from "@/actions/payment.action";
 import RevenuePage from "./RevenueList";
+import { getRevenueStatsAction, getRevenueHistoryAction } from "@/actions/revenue.action";
 
-export default async function PaymentsPage({
+export default async function RevenuePageWrapper({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | undefined>>;
@@ -13,18 +10,13 @@ export default async function PaymentsPage({
 
   const queryParams = {
     search: params?.search,
-    status: params?.status as "pending" | "paid" | "rejected" | undefined,
     page: params?.page ? parseInt(params.page) : undefined,
   };
 
-  const [paymentsRes, statsRes] = await Promise.all([
-    getPaymentsAction(queryParams),
-    getPaymentStatsAction(),
+  const [statsRes, historyRes] = await Promise.all([
+    getRevenueStatsAction(),
+    getRevenueHistoryAction(queryParams),
   ]);
-
-  const payments = paymentsRes.success ? paymentsRes.data.results : [];
-  const pagination = paymentsRes.success ? paymentsRes.data.pagination : null;
-  const stats = statsRes.success ? statsRes.data : null;
 
   return (
     <div className="space-y-6">
@@ -37,15 +29,13 @@ export default async function PaymentsPage({
         </p>
       </div>
 
-      {/* <PaymentsList
-        payments={payments}
-        pagination={pagination}
-        stats={stats}
-        errorMessage={!paymentsRes.success ? paymentsRes.message : undefined}
+      <RevenuePage
+        initialStats={statsRes.success ? statsRes.data : null}
+        initialHistory={historyRes.success ? historyRes.data.results : []}
+        initialPagination={historyRes.success ? historyRes.data.pagination : null}
         statsError={!statsRes.success ? statsRes.message : undefined}
-      /> */}
-
-      <RevenuePage />
+        historyError={!historyRes.success ? historyRes.message : undefined}
+      />
     </div>
   );
 }

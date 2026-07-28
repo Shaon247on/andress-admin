@@ -5,6 +5,8 @@ export interface DashboardCards {
   pending_requests: number;
   court_managers: number;
   total_courts: number;
+  pending_payments?: number;
+  active_staff?: number;
   active_bookings: number;
   support_messages: number;
 }
@@ -15,9 +17,11 @@ export interface BookingTrendItem {
   count: number;
 }
 
-export interface CourtUtilizationItem {
-  court: string;
-  utilization: number;
+export interface TopManager {
+  manager_id: string;
+  manager: string;
+  revenue: string;
+  bookings: number;
 }
 
 export interface BookingCustomer {
@@ -29,11 +33,13 @@ export interface BookingCourt {
   name: string;
   facility: string;
   sport: string;
+  club_name?: string;
 }
 
 export interface TodayBooking {
   id: string;
   code: string;
+  booking_type: string;
   customer: BookingCustomer;
   court: BookingCourt;
   location: string;
@@ -42,13 +48,13 @@ export interface TodayBooking {
   start_time: string;
   duration: number;
   price: string;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
+  status: "confirmed" | "pending" | "cancelled" | "completed";
 }
 
 export interface DashboardData {
   success: boolean;
   cards: DashboardCards;
   booking_trend: BookingTrendItem[];
-  court_utilization: CourtUtilizationItem[];
+  top_managers_by_revenue: TopManager[];
   todays_bookings: TodayBooking[];
 }

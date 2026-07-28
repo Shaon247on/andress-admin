@@ -168,7 +168,6 @@ export default function AdminChatPage({ ticket: initialTicket, thread: initialTh
         setIsLocked(res.data.ticket.locked || res.data.ticket.status === 'resolved');
       }
       setReplyMessage('');
-      toast.success('Reply sent');
       scrollToBottom();
     } else {
       toast.error(res.message);
@@ -306,18 +305,6 @@ export default function AdminChatPage({ ticket: initialTicket, thread: initialTh
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem
-                className="text-blue-600"
-                onClick={() => {
-                  if (currentTicket.status !== 'in_progress') {
-                    handleStatusChange('in_progress');
-                  }
-                }}
-                disabled={currentTicket.status === 'in_progress' || isLocked}
-              >
-                <Clock className="w-4 h-4 mr-2" />
-                Mark In Progress
-              </DropdownMenuItem>
-              <DropdownMenuItem
                 className="text-green-600"
                 onClick={() => handleStatusChange('resolved')}
                 disabled={isLocked}
@@ -325,16 +312,6 @@ export default function AdminChatPage({ ticket: initialTicket, thread: initialTh
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Resolve Ticket
               </DropdownMenuItem>
-              {audience === 'users' && (
-                <DropdownMenuItem
-                  className="text-purple-600"
-                  onClick={() => setEscalateDialogOpen(true)}
-                  disabled={isLocked}
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Escalate to Manager
-                </DropdownMenuItem>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

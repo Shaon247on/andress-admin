@@ -9,9 +9,13 @@ import type {
   UserDetail,
 } from "@/types/User.type";
 
+import { revalidatePath } from "next/cache";
+
 // ── GET all users ─────────────────────────────────────────────────────────
 
-export async function getUsersAction(rawParams: unknown): Promise<
+export async function getUsersAction(
+  rawParams: unknown,
+): Promise<
   | { success: true; data: UsersListResponse }
   | { success: false; message: string }
 > {
@@ -22,11 +26,14 @@ export async function getUsersAction(rawParams: unknown): Promise<
     const api = await getServerApi();
     const response = await api.get("/admin/users/", { params });
     const result = handleActionResponse(response.data);
-    
+
     if (!result.success) {
-      return { success: false, message: result.message ?? "Failed to load users" };
+      return {
+        success: false,
+        message: result.message ?? "Failed to load users",
+      };
     }
-    
+
     return { success: true, data: result.data as UsersListResponse };
   } catch (error) {
     const err = handleApiError(error);
@@ -36,9 +43,10 @@ export async function getUsersAction(rawParams: unknown): Promise<
 
 // ── GET user details ─────────────────────────────────────────────────────
 
-export async function getUserDetailAction(id: string): Promise<
-  | { success: true; data: UserDetail }
-  | { success: false; message: string }
+export async function getUserDetailAction(
+  id: string,
+): Promise<
+  { success: true; data: UserDetail } | { success: false; message: string }
 > {
   if (!id) return { success: false, message: "User ID is required" };
 
@@ -46,11 +54,14 @@ export async function getUserDetailAction(id: string): Promise<
     const api = await getServerApi();
     const response = await api.get(`/admin/users/${id}/`);
     const result = handleActionResponse(response.data);
-    
+
     if (!result.success) {
-      return { success: false, message: result.message ?? "Failed to load user details" };
+      return {
+        success: false,
+        message: result.message ?? "Failed to load user details",
+      };
     }
-    
+
     return { success: true, data: result.data as UserDetail };
   } catch (error) {
     const err = handleApiError(error);
@@ -60,9 +71,10 @@ export async function getUserDetailAction(id: string): Promise<
 
 // ── Suspend user ──────────────────────────────────────────────────────────
 
-export async function suspendUserAction(id: string): Promise<
-  | { success: true; message: string }
-  | { success: false; message: string }
+export async function suspendUserAction(
+  id: string,
+): Promise<
+  { success: true; message: string } | { success: false; message: string }
 > {
   if (!id) return { success: false, message: "User ID is required" };
 
@@ -70,14 +82,18 @@ export async function suspendUserAction(id: string): Promise<
     const api = await getServerApi();
     const response = await api.post(`/admin/users/${id}/suspend/`);
     const result = handleActionResponse(response.data);
-    
+
     if (!result.success) {
-      return { success: false, message: result.message ?? "Failed to suspend user" };
+      return {
+        success: false,
+        message: result.message ?? "Failed to suspend user",
+      };
     }
-    
-    return { 
-      success: true, 
-      message: result.data?.message ?? "User suspended successfully." 
+    revalidatePath("/dashboard/users");
+
+    return {
+      success: true,
+      message: result.data?.message ?? "User suspended successfully.",
     };
   } catch (error) {
     const err = handleApiError(error);
@@ -87,9 +103,10 @@ export async function suspendUserAction(id: string): Promise<
 
 // ── Activate user ─────────────────────────────────────────────────────────
 
-export async function activateUserAction(id: string): Promise<
-  | { success: true; message: string }
-  | { success: false; message: string }
+export async function activateUserAction(
+  id: string,
+): Promise<
+  { success: true; message: string } | { success: false; message: string }
 > {
   if (!id) return { success: false, message: "User ID is required" };
 
@@ -97,14 +114,18 @@ export async function activateUserAction(id: string): Promise<
     const api = await getServerApi();
     const response = await api.post(`/admin/users/${id}/activate/`);
     const result = handleActionResponse(response.data);
-    
+
     if (!result.success) {
-      return { success: false, message: result.message ?? "Failed to activate user" };
+      return {
+        success: false,
+        message: result.message ?? "Failed to activate user",
+      };
     }
-    
-    return { 
-      success: true, 
-      message: result.data?.message ?? "User activated successfully." 
+    revalidatePath("/dashboard/users");
+
+    return {
+      success: true,
+      message: result.data?.message ?? "User activated successfully.",
     };
   } catch (error) {
     const err = handleApiError(error);
@@ -115,15 +136,14 @@ export async function activateUserAction(id: string): Promise<
 // ── Export users to CSV/Excel ────────────────────────────────────────────
 
 export async function exportUsersAction(): Promise<
-  | { success: true; data: string }
-  | { success: false; message: string }
+  { success: true; data: string } | { success: false; message: string }
 > {
   try {
     const api = await getServerApi();
     const response = await api.get("/admin/users/export/", {
-      responseType: 'text',
+      responseType: "text",
     });
-    
+
     // The response is CSV text
     return { success: true, data: response.data };
   } catch (error) {

@@ -30,10 +30,7 @@ export default async function AdminSupportPage({
 
   return (
     <div className="space-y-6 relative">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text">Support</h1>
-        <p className="text-sm text-text-muted mt-1">Manage support tickets from users and court managers</p>
-      </div>
+      
 
       <AdminSupportClient
         initialTickets={tickets}

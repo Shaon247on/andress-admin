@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/elements/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import SearchInput from "@/components/common/SearchInput";
+import Pagination from "@/components/common/Pagination";
 import {
   Table,
   TableBody,
@@ -22,7 +24,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  DollarSign,
   TrendingUp,
   Clock,
   CheckCircle2,
@@ -31,138 +32,129 @@ import {
   History,
   AlertCircle,
   Euro,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getRevenueStatsAction, getRevenueHistoryAction, withdrawAction } from "@/actions/revenue.action";
+import type { RevenueStats, RevenueHistoryItem } from "@/types/Revenue.type";
 
-// ── Types ──
-interface Withdrawal {
-  id: string;
-  user: string;
-  userEmail: string;
-  amount: number;
-  date: Date;
-  remainingBalance: number; 
-}
-
-interface RevenueStats {
-  totalRevenue: number;
-  platformCommission: number;
-  userCommission: number;
-  pendingWithdrawals: number;
-  completedWithdrawals: number;
-  availableBalance: number;
+interface RevenuePageProps {
+  initialStats?: RevenueStats | null;
+  initialHistory?: RevenueHistoryItem[];
+  initialPagination?: {
+    count: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+  } | null;
+  statsError?: string;
+  historyError?: string;
 }
 
 // ── Main Component ──
-export default function RevenuePage() {
+export default function RevenuePage({
+  initialStats = null,
+  initialHistory = [],
+  initialPagination = null,
+  statsError,
+  historyError,
+}: RevenuePageProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
   // ── State ──
+  const [stats, setStats] = useState<RevenueStats | null>(initialStats);
+  const [history, setHistory] = useState<RevenueHistoryItem[]>(initialHistory);
+  const [pagination, setPagination] = useState(initialPagination);
   const [withdrawAmount, setWithdrawAmount] = useState<string>("");
   const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // ── Static Data (would come from API) ──
-  const stats: RevenueStats = {
-    totalRevenue: 28450.75,
-    platformCommission: 4267.61,
-    userCommission: 3560.50,
-    pendingWithdrawals: 1250.00,
-    completedWithdrawals: 18950.00,
-    availableBalance: 1000.00,
+  // ── Fetch data ──
+  const fetchStats = async () => {
+    const res = await getRevenueStatsAction();
+    if (res.success) {
+      setStats(res.data);
+    } else {
+      setError(res.message);
+    }
   };
 
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([
-    {
-      id: "1",
-      user: "John Doe",
-      userEmail: "john.doe@courts.com",
-      amount: 500.00,
-      date: new Date("2026-07-20T10:30:00"),
-      remainingBalance: 8500.00,
-    },
-    {
-      id: "2",
-      user: "Sarah Johnson",
-      userEmail: "sarah.j@courts.com",
-      amount: 750.00,
-      date: new Date("2026-07-18T14:15:00"),
-      remainingBalance: 9000.00,
-    },
-    {
-      id: "3",
-      user: "Michael Chen",
-      userEmail: "michael.c@courts.com",
-      amount: 300.00,
-      date: new Date("2026-07-15T09:45:00"),
-      remainingBalance: 9750.00,
-    },
-    {
-      id: "4",
-      user: "Emma Williams",
-      userEmail: "emma.w@courts.com",
-      amount: 1000.00,
-      date: new Date("2026-07-12T16:20:00"),
-      remainingBalance: 10500.00,
-    },
-    {
-      id: "5",
-      user: "James Rodriguez",
-      userEmail: "james.r@courts.com",
-      amount: 250.00,
-      date: new Date("2026-07-10T11:00:00"),
-      remainingBalance: 11500.00,
-    },
-  ]);
+  const fetchHistory = async (page?: number, search?: string) => {
+    setIsLoading(true);
+    const params: any = {};
+    if (page) params.page = page;
+    if (search) params.search = search;
+    
+    const res = await getRevenueHistoryAction(params);
+    if (res.success) {
+      setHistory(res.data.results);
+      setPagination(res.data.pagination);
+    } else {
+      toast.error(res.message);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (!initialStats) {
+      fetchStats();
+    }
+  }, []);
 
   // ── Handlers ──
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
     if (!withdrawAmount || isNaN(amount) || amount <= 0) {
       toast.error("Please enter a valid amount");
       return;
     }
 
-    if (amount > stats.availableBalance) {
+    const availableBalance = stats ? parseFloat(stats.available_balance) : 0;
+    if (amount > availableBalance) {
       toast.error("Insufficient balance");
       return;
     }
 
     setIsProcessing(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      const newWithdrawal: Withdrawal = {
-        id: `w-${Date.now()}`,
-        user: "Current User",
-        userEmail: "user@example.com",
-        amount: amount,
-        date: new Date(),
-        remainingBalance: stats.availableBalance - amount,
-      };
-
-      setWithdrawals([newWithdrawal, ...withdrawals]);
+    const res = await withdrawAction({ amount: withdrawAmount });
+    
+    if (res.success) {
+      toast.success(res.data.message);
       setWithdrawAmount("");
       setIsWithdrawDialogOpen(false);
-      setIsProcessing(false);
-      toast.success(`€${amount.toFixed(2)} withdrawal request submitted`);
-    }, 1500);
+      // Refresh stats and history
+      await fetchStats();
+      await fetchHistory(1);
+      router.refresh();
+    } else {
+      toast.error(res.message);
+    }
+    setIsProcessing(false);
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dateString;
+    }
   };
 
   // ── Summary Cards ──
   const summaryCards = [
     {
       title: "Total Revenue",
-      value: stats.totalRevenue,
+      value: stats ? parseFloat(stats.total_revenue) : 0,
       icon: Euro,
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600",
@@ -171,7 +163,7 @@ export default function RevenuePage() {
     },
     {
       title: "Platform Commission",
-      value: stats.platformCommission,
+      value: stats ? parseFloat(stats.platform_commission) : 0,
       icon: TrendingUp,
       iconBg: "bg-blue-50",
       iconColor: "text-blue-600",
@@ -180,7 +172,7 @@ export default function RevenuePage() {
     },
     {
       title: "User Commission",
-      value: stats.userCommission,
+      value: stats ? parseFloat(stats.user_commission) : 0,
       icon: Wallet,
       iconBg: "bg-purple-50",
       iconColor: "text-purple-600",
@@ -189,7 +181,7 @@ export default function RevenuePage() {
     },
     {
       title: "Completed Withdrawals",
-      value: stats.completedWithdrawals,
+      value: stats ? parseFloat(stats.completed_withdrawals) : 0,
       icon: CheckCircle2,
       iconBg: "bg-green-50",
       iconColor: "text-green-600",
@@ -198,22 +190,34 @@ export default function RevenuePage() {
     },
   ];
 
+  const availableBalance = stats ? parseFloat(stats.available_balance) : 0;
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {error}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        
         <div className="flex items-center gap-3">
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 text-center">
             <p className="text-xs text-emerald-600 font-medium">Available Balance</p>
             <p className="text-xl font-bold text-emerald-700">
-              €{stats.availableBalance.toLocaleString()}
+              €{availableBalance.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </p>
           </div>
           <Button
             className="h-12 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-sm"
             onClick={() => setIsWithdrawDialogOpen(true)}
-            disabled={stats.availableBalance <= 0}
+            disabled={availableBalance <= 0}
           >
             <Wallet className="w-4 h-4 mr-2" />
             Withdraw
@@ -280,6 +284,16 @@ export default function RevenuePage() {
         })}
       </div>
 
+      {/* Search & Filters */}
+      <div className="flex max-w-xl flex-col sm:flex-row items-center gap-4">
+        <div className="flex-1 w-full">
+          <SearchInput
+            name="search"
+            placeholder="Search by user or code..."
+          />
+        </div>
+      </div>
+
       {/* Withdrawal History Table */}
       <Card className="border border-border shadow-sm rounded-2xl bg-surface overflow-hidden">
         <div className="flex items-center justify-between p-6 pb-0">
@@ -290,7 +304,7 @@ export default function RevenuePage() {
             </h3>
           </div>
           <span className="text-xs text-text-muted">
-            {withdrawals.length} withdrawals
+            {history.length} withdrawals
           </span>
         </div>
 
@@ -298,6 +312,7 @@ export default function RevenuePage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-[#fafafa] hover:bg-[#fafafa]">
+                <TableHead className="font-semibold text-text">Code</TableHead>
                 <TableHead className="font-semibold text-text">User</TableHead>
                 <TableHead className="font-semibold text-text">Amount</TableHead>
                 <TableHead className="font-semibold text-text">Date</TableHead>
@@ -305,7 +320,13 @@ export default function RevenuePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {withdrawals.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-500" />
+                  </TableCell>
+                </TableRow>
+              ) : history.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={5}
@@ -315,27 +336,30 @@ export default function RevenuePage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                withdrawals.map((withdrawal) => (
-                  <TableRow key={withdrawal.id} className="hover:bg-background/50">
+                history.map((item) => (
+                  <TableRow key={item.id} className="hover:bg-background/50">
+                    <TableCell className="font-medium text-text">
+                      {item.code}
+                    </TableCell>
                     <TableCell>
                       <div className="font-medium text-text">
-                        {withdrawal.user}
+                        {item.user.name}
                       </div>
                       <div className="text-text-muted text-xs">
-                        {withdrawal.userEmail}
+                        {item.user.email}
                       </div>
                     </TableCell>
                     <TableCell className="font-bold text-emerald-600">
-                      €{withdrawal.amount.toLocaleString(undefined, {
+                      €{parseFloat(item.amount).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
                     </TableCell>
                     <TableCell className="text-text-muted text-sm">
-                      {formatDate(withdrawal.date)}
+                      {formatDate(item.date)}
                     </TableCell>
                     <TableCell className="font-medium text-text">
-                      €{withdrawal.remainingBalance.toLocaleString(undefined, {
+                      €{parseFloat(item.remaining_balance).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
@@ -347,6 +371,10 @@ export default function RevenuePage() {
           </Table>
         </div>
       </Card>
+
+      {pagination && pagination.total_pages > 1 && (
+        <Pagination total={pagination.count} pageSize={pagination.page_size} />
+      )}
 
       {/* Withdraw Dialog */}
       <Dialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
@@ -367,7 +395,7 @@ export default function RevenuePage() {
                 Available Balance
               </p>
               <p className="text-2xl font-bold text-emerald-700">
-                €{stats.availableBalance.toLocaleString(undefined, {
+                €{availableBalance.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
@@ -389,11 +417,11 @@ export default function RevenuePage() {
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   className="pl-8 h-12 text-lg font-medium"
                   min={0}
-                  max={stats.availableBalance}
+                  max={availableBalance}
                   step={0.01}
                 />
               </div>
-              {withdrawAmount && parseFloat(withdrawAmount) > stats.availableBalance && (
+              {withdrawAmount && parseFloat(withdrawAmount) > availableBalance && (
                 <p className="text-xs text-red-500 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   Amount exceeds available balance
@@ -436,12 +464,12 @@ export default function RevenuePage() {
                 isProcessing ||
                 !withdrawAmount ||
                 parseFloat(withdrawAmount) <= 0 ||
-                parseFloat(withdrawAmount) > stats.availableBalance
+                parseFloat(withdrawAmount) > availableBalance
               }
             >
               {isProcessing ? (
                 <>
-                  <span className="animate-spin mr-2">⏳</span>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Processing...
                 </>
               ) : (

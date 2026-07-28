@@ -29,6 +29,7 @@ export interface AdminSupportTicket {
   created_at: string;
   updated_at: string;
   reply_count: number;
+  unread_count: number; // Added this field
 }
 
 export interface AdminSupportTicketDetail {

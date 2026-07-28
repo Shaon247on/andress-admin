@@ -2,28 +2,44 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  X, Send, Loader2, User, Mail, Calendar, Tag, 
-  AlertCircle, CheckCircle, Clock, ArrowLeft, 
-  MoreVertical, Check, Users, UserCog, MessageSquare
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { 
-  adminReplyToTicketAction, 
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  X,
+  Send,
+  Loader2,
+  User,
+  Mail,
+  Calendar,
+  Tag,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  ArrowLeft,
+  MoreVertical,
+  Check,
+  Users,
+  UserCog,
+  MessageSquare,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  adminReplyToTicketAction,
   adminUpdateTicketStatusAction,
   getAdminTicketDetailsAction,
-  adminEscalateToManagerAction
-} from '@/actions/admin-support.action';
-import { useAdminSupportSocket } from '@/hooks/useAdminSupportSocket';
-import type { AdminSupportTicket, AdminThreadItem } from '@/types/AdminSupport.type';
-import { toast } from 'sonner';
+  adminEscalateToManagerAction,
+} from "@/actions/admin-support.action";
+import { useAdminSupportSocket } from "@/hooks/useAdminSupportSocket";
+import type {
+  AdminSupportTicket,
+  AdminThreadItem,
+} from "@/types/AdminSupport.type";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -32,93 +48,145 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AdminChatViewProps {
   open: boolean;
   onClose: () => void;
   ticket: AdminSupportTicket | null;
-  audience: 'users' | 'managers';
+  audience: "users" | "managers";
 }
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusMap: Record<string, { label: string; className: string }> = {
-    open: { label: 'Open', className: 'bg-red-100 text-red-700' },
-    in_progress: { label: 'In Progress', className: 'bg-blue-100 text-blue-700' },
-    resolved: { label: 'Resolved', className: 'bg-green-100 text-green-700' },
+    open: { label: "Open", className: "bg-red-100 text-red-700" },
+    in_progress: {
+      label: "In Progress",
+      className: "bg-blue-100 text-blue-700",
+    },
+    resolved: { label: "Resolved", className: "bg-green-100 text-green-700" },
   };
   const { label, className } = statusMap[status] || statusMap.open;
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${className}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${className}`}
+    >
       {label}
     </span>
   );
 };
 
-export default function AdminChatView({ open, onClose, ticket, audience }: AdminChatViewProps) {
+export default function AdminChatView({
+  open,
+  onClose,
+  ticket,
+  audience,
+}: AdminChatViewProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [thread, setThread] = useState<AdminThreadItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [replyMessage, setReplyMessage] = useState('');
+  const [replyMessage, setReplyMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [currentTicket, setCurrentTicket] = useState<AdminSupportTicket | null>(ticket);
+  const [currentTicket, setCurrentTicket] = useState<AdminSupportTicket | null>(
+    ticket,
+  );
   const [isLocked, setIsLocked] = useState(ticket?.locked || false);
   const [isConnected, setIsConnected] = useState(false);
 
   // Escalate dialog states
   const [escalateDialogOpen, setEscalateDialogOpen] = useState(false);
-  const [escalateSubject, setEscalateSubject] = useState('');
-  const [escalateMessage, setEscalateMessage] = useState('');
-  const [escalateCategory, setEscalateCategory] = useState('other');
+  const [escalateSubject, setEscalateSubject] = useState("");
+  const [escalateMessage, setEscalateMessage] = useState("");
+  const [escalateCategory, setEscalateCategory] = useState("other");
   const [escalating, setEscalating] = useState(false);
-  const [managerId, setManagerId] = useState('');
+  const [managerId, setManagerId] = useState("");
 
   // Resolve dialog states
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
 
-  // Deduplicate messages
-  const deduplicateMessages = useCallback((messages: AdminThreadItem[]): AdminThreadItem[] => {
-    const seen = new Set<string>();
-    return messages.filter(msg => {
-      if (seen.has(msg.id)) {
-        return false;
+  // ── Focus textarea when chat opens or after sending ──
+  const focusTextarea = useCallback(() => {
+    setTimeout(() => {
+      if (textareaRef.current && !isLocked) {
+        textareaRef.current.focus();
       }
-      seen.add(msg.id);
-      return true;
-    });
-  }, []);
+    }, 100);
+  }, [isLocked]);
+
+  // Focus when chat opens
+  useEffect(() => {
+    if (open && !isLocked) {
+      focusTextarea();
+    }
+  }, [open, isLocked, focusTextarea]);
+
+  // Deduplicate messages
+  const deduplicateMessages = useCallback(
+    (messages: AdminThreadItem[]): AdminThreadItem[] => {
+      const seen = new Set<string>();
+      return messages.filter((msg) => {
+        if (seen.has(msg.id)) {
+          return false;
+        }
+        seen.add(msg.id);
+        return true;
+      });
+    },
+    [],
+  );
 
   // Socket for real-time updates
   const { isConnected: socketConnected } = useAdminSupportSocket({
     onReply: (data) => {
       if (currentTicket && data.ticket_code === currentTicket.code) {
         // Check if we already have this message
-        const existingIds = new Set(thread.map(t => t.id));
+        const existingIds = new Set(thread.map((t) => t.id));
         if (!existingIds.has(data.reply.id)) {
-          setThread(prev => {
+          setThread((prev) => {
             const combined = [...prev, data.reply];
             const unique = deduplicateMessages(combined);
-            return unique.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            return unique.sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime(),
+            );
           });
           if (data.status) {
-            setCurrentTicket(prev => prev ? { ...prev, status: data.status as any } : null);
+            setCurrentTicket((prev) =>
+              prev ? { ...prev, status: data.status as any } : null,
+            );
           }
           scrollToBottom();
+          // Focus textarea when new reply comes in (if not locked)
+          if (!isLocked) {
+            focusTextarea();
+          }
         }
       }
     },
     onStatus: (data) => {
       if (currentTicket && data.code === currentTicket.code) {
-        setCurrentTicket(prev => prev ? { 
-          ...prev, 
-          status: data.status as any, 
-          locked: data.locked 
-        } : null);
+        setCurrentTicket((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: data.status as any,
+                locked: data.locked,
+              }
+            : null,
+        );
         setIsLocked(data.locked);
         if (data.locked) {
-          toast.info('This ticket has been resolved and is now locked.');
+          toast.info("This ticket has been resolved and is now locked.");
         }
       }
     },
@@ -130,50 +198,63 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
 
   const loadThread = async () => {
     if (!currentTicket) {
-      console.log('No current ticket to load');
+      console.log("No current ticket to load");
       return;
     }
-    
-    console.log('Loading thread for ticket:', currentTicket.code);
+
+    console.log("Loading thread for ticket:", currentTicket.code);
     setLoading(true);
-    
+
     try {
-      console.log('Admin ticket details response:', currentTicket.code);
+      console.log("Admin ticket details response:", currentTicket.code);
       const res = await getAdminTicketDetailsAction(currentTicket.code);
-      console.log('Admin ticket details response:', res);
-      
+      console.log("Admin ticket details response:", res);
+
       if (res.success) {
-        console.log('Thread data received:', {
+        console.log("Thread data received:", {
           threadLength: res.data.thread?.length || 0,
           ticketStatus: res.data.ticket?.status,
           isLocked: res.data.ticket?.locked,
         });
-        
+
         const uniqueThread = deduplicateMessages(res.data.thread || []);
         setThread(uniqueThread);
         setCurrentTicket(res.data.ticket);
-        setIsLocked(res.data.ticket?.locked || res.data.ticket?.status === 'resolved');
-        console.log('Thread loaded successfully, messages:', uniqueThread.length);
+        setIsLocked(
+          res.data.ticket?.locked || res.data.ticket?.status === "resolved",
+        );
+        console.log(
+          "Thread loaded successfully, messages:",
+          uniqueThread.length,
+        );
+
+        // Focus after loading
+        if (
+          !res.data.ticket?.locked &&
+          res.data.ticket?.status !== "resolved"
+        ) {
+          focusTextarea();
+        }
       } else {
-        console.error('Failed to load thread:', res.message);
+        console.error("Failed to load thread:", res.message);
         toast.error(res.message);
       }
     } catch (error) {
-      console.error('Error loading thread:', error);
-      toast.error('Failed to load conversation');
+      console.error("Error loading thread:", error);
+      toast.error("Failed to load conversation");
     } finally {
       setLoading(false);
-      console.log('Loading state set to false');
+      console.log("Loading state set to false");
     }
   };
 
   useEffect(() => {
     if (open && ticket) {
-      console.log('Opening chat for ticket:', ticket.code);
+      console.log("Opening chat for ticket:", ticket.code);
       setCurrentTicket(ticket);
       loadThread();
     } else {
-      console.log('Chat closed or no ticket');
+      console.log("Chat closed or no ticket");
     }
   }, [open, ticket]);
 
@@ -186,24 +267,27 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
   const scrollToBottom = () => {
     setTimeout(() => {
       if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        chatContainerRef.current.scrollTop =
+          chatContainerRef.current.scrollHeight;
       }
     }, 100);
   };
 
   const handleReply = async () => {
     if (!replyMessage.trim() || !currentTicket) {
-      toast.error('Please enter a message');
+      toast.error("Please enter a message");
       return;
     }
 
     if (isLocked) {
-      toast.error('This ticket is resolved and cannot be replied to');
+      toast.error("This ticket is resolved and cannot be replied to");
       return;
     }
 
     setSending(true);
-    const res = await adminReplyToTicketAction(currentTicket.code, { message: replyMessage });
+    const res = await adminReplyToTicketAction(currentTicket.code, {
+      message: replyMessage,
+    });
     if (res.success) {
       // If the response has thread data, use it
       if (res.data?.thread) {
@@ -215,31 +299,39 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
       }
       if (res.data?.ticket) {
         setCurrentTicket(res.data.ticket);
-        setIsLocked(res.data.ticket.locked || res.data.ticket.status === 'resolved');
+        setIsLocked(
+          res.data.ticket.locked || res.data.ticket.status === "resolved",
+        );
       }
-      setReplyMessage('');
-      toast.success('Reply sent');
+      setReplyMessage("");
       scrollToBottom();
+
+      // ── Focus textarea after sending ──
+      focusTextarea();
     } else {
       toast.error(res.message);
     }
     setSending(false);
   };
 
-  const handleStatusChange = async (status: 'open' | 'in_progress' | 'resolved') => {
+  const handleStatusChange = async (
+    status: "open" | "in_progress" | "resolved",
+  ) => {
     if (!currentTicket) return;
 
-    if (status === 'resolved') {
+    if (status === "resolved") {
       setResolveDialogOpen(true);
       return;
     }
 
     setResolving(true);
-    const res = await adminUpdateTicketStatusAction(currentTicket.code, { status });
+    const res = await adminUpdateTicketStatusAction(currentTicket.code, {
+      status,
+    });
     if (res.success) {
       toast.success(res.data.message);
-      setCurrentTicket(prev => prev ? { ...prev, status: status } : null);
-      if (status === 'resolved') {
+      setCurrentTicket((prev) => (prev ? { ...prev, status: status } : null));
+      if (status === "resolved") {
         setIsLocked(true);
       }
       // Refresh the thread to get updated data
@@ -253,10 +345,14 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
   const handleResolve = async () => {
     if (!currentTicket) return;
     setResolving(true);
-    const res = await adminUpdateTicketStatusAction(currentTicket.code, { status: 'resolved' });
+    const res = await adminUpdateTicketStatusAction(currentTicket.code, {
+      status: "resolved",
+    });
     if (res.success) {
       toast.success(res.data.message);
-      setCurrentTicket(prev => prev ? { ...prev, status: 'resolved', locked: true } : null);
+      setCurrentTicket((prev) =>
+        prev ? { ...prev, status: "resolved", locked: true } : null,
+      );
       setIsLocked(true);
       setResolveDialogOpen(false);
       loadThread();
@@ -268,7 +364,7 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
 
   const handleEscalate = async () => {
     if (!escalateSubject.trim() || !escalateMessage.trim() || !managerId) {
-      toast.error('All fields are required');
+      toast.error("All fields are required");
       return;
     }
 
@@ -281,10 +377,10 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
     if (res.success) {
       toast.success(res.data.message);
       setEscalateDialogOpen(false);
-      setEscalateSubject('');
-      setEscalateMessage('');
-      setEscalateCategory('other');
-      setManagerId('');
+      setEscalateSubject("");
+      setEscalateMessage("");
+      setEscalateCategory("other");
+      setManagerId("");
     } else {
       toast.error(res.message);
     }
@@ -293,12 +389,12 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+      return new Date(dateString).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch {
       return dateString;
@@ -306,13 +402,18 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
   };
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   if (!open || !currentTicket) return null;
 
-  const openingMessage = thread.find(msg => msg.is_opening);
-  const otherMessages = thread.filter(msg => !msg.is_opening);
+  const openingMessage = thread.find((msg) => msg.is_opening);
+  const otherMessages = thread.filter((msg) => !msg.is_opening);
 
   return (
     <>
@@ -333,7 +434,9 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-slate-900 truncate">{currentTicket.user.full_name}</h3>
+                    <h3 className="font-bold text-slate-900 truncate">
+                      {currentTicket.user.full_name}
+                    </h3>
                     <StatusBadge status={currentTicket.status} />
                     {isConnected && (
                       <span className="inline-flex items-center text-xs text-emerald-600">
@@ -365,24 +468,26 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
                   <DropdownMenuItem
                     className="text-blue-600"
                     onClick={() => {
-                      if (currentTicket.status !== 'in_progress') {
-                        handleStatusChange('in_progress');
+                      if (currentTicket.status !== "in_progress") {
+                        handleStatusChange("in_progress");
                       }
                     }}
-                    disabled={currentTicket.status === 'in_progress' || isLocked}
+                    disabled={
+                      currentTicket.status === "in_progress" || isLocked
+                    }
                   >
                     <Clock className="w-4 h-4 mr-2" />
                     Mark In Progress
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-green-600"
-                    onClick={() => handleStatusChange('resolved')}
+                    onClick={() => handleStatusChange("resolved")}
                     disabled={isLocked}
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Resolve Ticket
                   </DropdownMenuItem>
-                  {audience === 'users' && (
+                  {audience === "users" && (
                     <DropdownMenuItem
                       className="text-purple-600"
                       onClick={() => setEscalateDialogOpen(true)}
@@ -414,7 +519,9 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
               </div>
               <div className="flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5" />
-                <span className="truncate max-w-[150px]">{currentTicket.user.email}</span>
+                <span className="truncate max-w-[150px]">
+                  {currentTicket.user.email}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />
@@ -434,15 +541,24 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
                 <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-xs">
                   {getInitials(openingMessage.sender.name)}
                 </div>
-                <span className="font-semibold text-slate-700 text-sm">{openingMessage.sender.name}</span>
-                <span className="text-xs text-slate-400">{formatDate(openingMessage.created_at)}</span>
+                <span className="font-semibold text-slate-700 text-sm">
+                  {openingMessage.sender.name}
+                </span>
+                <span className="text-xs text-slate-400">
+                  {formatDate(openingMessage.created_at)}
+                </span>
               </div>
-              <p className="text-sm text-slate-600 whitespace-pre-wrap">{openingMessage.message}</p>
+              <p className="text-sm text-slate-600 whitespace-pre-wrap">
+                {openingMessage.message}
+              </p>
             </div>
           )}
 
           {/* Chat Messages */}
-          <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
+          <div
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30"
+          >
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
@@ -461,12 +577,16 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
                 return (
                   <div
                     key={msg.id}
-                    className={`flex flex-col ${isStaff ? 'items-end' : 'items-start'}`}
+                    className={`flex flex-col ${isStaff ? "items-end" : "items-start"}`}
                   >
-                    <div className={`flex items-center gap-2 mb-1 ${isStaff ? 'flex-row-reverse' : ''}`}>
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                        isStaff ? 'bg-emerald-500' : 'bg-slate-400'
-                      }`}>
+                    <div
+                      className={`flex items-center gap-2 mb-1 ${isStaff ? "flex-row-reverse" : ""}`}
+                    >
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                          isStaff ? "bg-emerald-500" : "bg-slate-400"
+                        }`}
+                      >
                         {getInitials(msg.sender.name)}
                       </div>
                       <span className="font-semibold text-slate-900 text-sm">
@@ -476,12 +596,14 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
                         {formatDate(msg.created_at)}
                       </span>
                     </div>
-                    <div className={`max-w-[85%] ${isStaff ? 'mr-9' : 'ml-9'}`}>
-                      <div className={`rounded-2xl p-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                        isStaff
-                          ? 'bg-emerald-500 text-white rounded-tr-sm'
-                          : 'bg-white border border-slate-200 rounded-tl-sm'
-                      }`}>
+                    <div className={`max-w-[85%] ${isStaff ? "mr-9" : "ml-9"}`}>
+                      <div
+                        className={`rounded-2xl p-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                          isStaff
+                            ? "bg-emerald-500 text-white rounded-tr-sm"
+                            : "bg-white border border-slate-200 rounded-tl-sm"
+                        }`}
+                      >
                         {msg.message}
                       </div>
                     </div>
@@ -495,19 +617,22 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
           <div className="p-4 border-t border-slate-200 bg-white shrink-0">
             {isLocked ? (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center text-slate-500">
-                <p className="font-medium">This ticket is resolved and locked</p>
+                <p className="font-medium">
+                  This ticket is resolved and locked
+                </p>
                 <p className="text-sm">No further replies can be added.</p>
               </div>
             ) : (
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
                   <textarea
+                    ref={textareaRef}
                     placeholder="Type your reply..."
                     className="w-full min-h-[60px] max-h-[120px] p-3 resize-none bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
                     value={replyMessage}
                     onChange={(e) => setReplyMessage(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
+                      if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         handleReply();
                       }
@@ -516,7 +641,7 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
                   />
                 </div>
                 <Button
-                  variant="primary"
+                  variant="default"
                   className="h-[60px] px-4 rounded-xl shrink-0"
                   onClick={handleReply}
                   disabled={sending || !replyMessage.trim()}
@@ -539,15 +664,26 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
           <DialogHeader>
             <DialogTitle>Resolve Ticket</DialogTitle>
             <DialogDescription>
-              Are you sure you want to resolve this ticket? This will lock the thread and prevent further replies.
+              Are you sure you want to resolve this ticket? This will lock the
+              thread and prevent further replies.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveDialogOpen(false)} disabled={resolving}>
+            <Button
+              variant="outline"
+              onClick={() => setResolveDialogOpen(false)}
+              disabled={resolving}
+            >
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleResolve} disabled={resolving}>
-              {resolving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            <Button
+              variant="default"
+              onClick={handleResolve}
+              disabled={resolving}
+            >
+              {resolving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
               Resolve
             </Button>
           </DialogFooter>
@@ -565,7 +701,9 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium text-slate-700">Manager ID</label>
+              <label className="text-sm font-medium text-slate-700">
+                Manager ID
+              </label>
               <Input
                 placeholder="Enter the manager's user ID"
                 value={managerId}
@@ -574,7 +712,9 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700">Subject</label>
+              <label className="text-sm font-medium text-slate-700">
+                Subject
+              </label>
               <Input
                 placeholder="Brief description"
                 value={escalateSubject}
@@ -583,7 +723,9 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700">Message</label>
+              <label className="text-sm font-medium text-slate-700">
+                Message
+              </label>
               <textarea
                 placeholder="Details for the manager..."
                 className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent min-h-[100px] resize-none mt-1"
@@ -592,8 +734,13 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700">Category</label>
-              <Select value={escalateCategory} onValueChange={setEscalateCategory}>
+              <label className="text-sm font-medium text-slate-700">
+                Category
+              </label>
+              <Select
+                value={escalateCategory}
+                onValueChange={setEscalateCategory}
+              >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -608,11 +755,21 @@ export default function AdminChatView({ open, onClose, ticket, audience }: Admin
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEscalateDialogOpen(false)} disabled={escalating}>
+            <Button
+              variant="outline"
+              onClick={() => setEscalateDialogOpen(false)}
+              disabled={escalating}
+            >
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleEscalate} disabled={escalating}>
-              {escalating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            <Button
+              variant="primary"
+              onClick={handleEscalate}
+              disabled={escalating}
+            >
+              {escalating ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
               Escalate
             </Button>
           </DialogFooter>
