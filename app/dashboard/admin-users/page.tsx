@@ -4,16 +4,18 @@ import { getAdminUsersAction } from "@/actions/admin-user.action";
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | undefined>;
+  searchParams?: Promise<Record<string, string | undefined>>;
 }) {
-  const params = {
-    search: searchParams?.search,
-    page: searchParams?.page,
-    role: searchParams?.role,
-    status: searchParams?.status,
+   const params = (await searchParams) || {};
+  
+  const queryParams = {
+    search: params?.search,
+    role: params?.role as "admin" | "staff" | undefined,
+    status: params?.status as "active" | "inactive" | undefined,
+    page: params?.page ? parseInt(params.page) : undefined,
   };
 
-  const res = await getAdminUsersAction(params);
+  const res = await getAdminUsersAction(queryParams);
   const users = res.success ? res.data.results : [];
   const total = res.success ? res.data.count : 0;
 

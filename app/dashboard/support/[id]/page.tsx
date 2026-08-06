@@ -5,7 +5,7 @@ import AdminChatPage from "./AdminChatPage";
 import { getAdminTicketDetailsAction } from "@/actions/admin-support.action";
 
 interface AdminChatPageProps {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<Record<string, string | undefined>>;
 }
 
 export default async function AdminChatPageWrapper({ params }: AdminChatPageProps) {
